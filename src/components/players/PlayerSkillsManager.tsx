@@ -1,0 +1,237 @@
+﻿"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
+type Skill = {
+  _id: string;
+  name: string;
+  category?: string;
+  details?: { _id: string; name: string }[];
+};
+
+type PlayerSkill = {
+  _id: string;
+  playerId: string;
+  skillId: string;
+  detailId?: string;
+  plannedDate?: string;
+  doneDate?: string;
+  status: "plan" | "w_trakcie" | "zrobione";
+  notes?: string;
+};
+
+function toDateInput(value?: string) {
+  if (!value) return "";
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+export default function PlayerSkillsManager({ playerId }: { playerId: string }) {
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [rows, setRows] = useState<PlayerSkill[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const [skillId, setSkillId] = useState("");
+  const [detailId, setDetailId] = useState("");
+  const [plannedDate, setPlannedDate] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const selectedSkill = useMemo(() => skills.find((s) => s._id === skillId), [skills, skillId]);
+
+  async function loadAll() {
+    const sRes = await fetch("/api/skills", { cache: "no-store" });
+    const sData = await sRes.json();
+    setSkills(sData);
+
+    const rRes = await fetch(`/api/player-skills?playerId=${playerId}`, { cache: "no-store" });
+    const rData = await rRes.json();
+    setRows(rData);
+  }
+
+  useEffect(() => {
+    loadAll();
+  }, [playerId]);
+
+  async function addRow(e: React.FormEvent) {
+    e.preventDefault();
+    if (!skillId) return;
+
+    setLoading(true);
+
+    const res = await fetch("/api/player-skills", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        playerId,
+        skillId,
+        detailId: detailId || undefined,
+        plannedDate: plannedDate || undefined,
+        notes: notes || undefined,
+        status: "plan",
+      }),
+    });
+
+    setLoading(false);
+
+    if (!res.ok) {
+      alert("Nie udało się przypisać umiejętności");
+      return;
+    }
+
+    setDetailId("");
+    setPlannedDate("");
+    setNotes("");
+    await loadAll();
+  }
+
+  async function updateRow(id: string, patch: Partial<PlayerSkill>) {
+    const res = await fetch(`/api/player-skills/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+
+    if (!res.ok) {
+      alert("Nie udało się zapisać zmian");
+      return;
+    }
+
+    await loadAll();
+  }
+
+  async function removeRow(id: string) {
+    const ok = window.confirm("Usunąć przypisaną umiejętność?");
+    if (!ok) return;
+
+    const res = await fetch(`/api/player-skills/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      alert("Nie udało się usunąć");
+      return;
+    }
+
+    await loadAll();
+  }
+
+  const skillName = (id: string) => skills.find((s) => s._id === id)?.name ?? "Umiejętność";
+  const detailName = (sid: string, did?: string) => {
+    if (!did) return "";
+    const s = skills.find((x) => x._id === sid);
+    return s?.details?.find((d) => d._id === did)?.name ?? "";
+  };
+
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="border-b border-gray-200 bg-gray-50 px-5 py-4">
+        <div className="text-lg font-semibold tracking-tight">Umiejętności i realizacja</div>
+        <div className="mt-1 text-sm text-gray-600">Planowanie, status, daty realizacji i detale</div>
+      </div>
+
+      <div className="p-5">
+        <form onSubmit={addRow} className="grid gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid gap-1">
+              <label className="text-sm">Umiejętność</label>
+              <select className="rounded-xl border border-gray-200 px-3 py-2" value={skillId} onChange={(e) => setSkillId(e.target.value)}>
+                <option value="">Wybierz</option>
+                {skills.map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid gap-1">
+              <label className="text-sm">Detal</label>
+              <select
+                className="rounded-xl border border-gray-200 px-3 py-2"
+                value={detailId}
+                onChange={(e) => setDetailId(e.target.value)}
+                disabled={!selectedSkill || (selectedSkill.details?.length ?? 0) === 0}
+              >
+                <option value="">Brak</option>
+                {(selectedSkill?.details ?? []).map((d) => (
+                  <option key={d._id} value={d._id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid gap-1">
+              <label className="text-sm">Planowana data</label>
+              <input className="rounded-xl border border-gray-200 px-3 py-2" type="date" value={plannedDate} onChange={(e) => setPlannedDate(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="grid gap-1">
+            <label className="text-sm">Notatka</label>
+            <input className="rounded-xl border border-gray-200 px-3 py-2" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+
+          <div>
+            <button
+              disabled={loading || !skillId}
+              className="inline-flex items-center justify-center rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-60"
+              type="submit"
+            >
+              {loading ? "Dodawanie" : "Przypisz umiejętność"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div className="border-t border-gray-200">
+        {rows.length === 0 ? (
+          <div className="p-5 text-sm text-gray-600">Brak przypisanych umiejętności</div>
+        ) : (
+          <div className="p-5 grid gap-3">
+            {rows.map((r) => (
+              <div key={r._id} className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-4 md:flex-row md:items-center md:justify-between">
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold truncate">
+                    {skillName(r.skillId)} {detailName(r.skillId, r.detailId) ? `, ${detailName(r.skillId, r.detailId)}` : ""}
+                  </div>
+                  <div className="mt-1 text-xs text-gray-600">
+                    Plan: {r.plannedDate ? formatDatePL(new Date(r.plannedDate)) : "brak"} , Wykonano: {r.doneDate ? formatDatePL(new Date(r.doneDate)) : "brak"}
+                  </div>
+                  {r.notes ? <div className="mt-1 text-xs text-gray-600">{r.notes}</div> : null}
+                </div>
+
+                <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                  <select
+                    className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                    value={r.status}
+                    onChange={(e) => updateRow(r._id, { status: e.target.value as any })}
+                  >
+                    <option value="plan">plan</option>
+                    <option value="w_trakcie">w trakcie</option>
+                    <option value="zrobione">zrobione</option>
+                  </select>
+
+                  <input
+                    className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                    type="date"
+                    value={toDateInput(r.doneDate)}
+                    onChange={(e) => updateRow(r._id, { doneDate: e.target.value || undefined })}
+                  />
+
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50"
+                    onClick={() => removeRow(r._id)}
+                  >
+                    Usuń
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function formatDatePL(d: Date) {
+  return d.toLocaleDateString("pl-PL");
+}

@@ -1,0 +1,15 @@
+// src/models/User.ts
+import { Schema, model, models } from "mongoose";
+
+const UserSchema = new Schema(
+  {
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    name: { type: String, required: true, trim: true },
+    role: { type: String, enum: ["admin", "trainer", "viewer"], default: "trainer" },
+    passwordHash: { type: String, required: true },
+    isActive: { type: Boolean, default: true },
+  },
+  { timestamps: true }
+);
+
+export const User = models.User || model("User", UserSchema);

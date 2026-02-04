@@ -1,0 +1,47 @@
+import { NextResponse } from "next/server";
+import { dbConnect } from "@/lib/mongodb";
+import { Player } from "@/models/Player";
+import { playerSchema } from "@/lib/validators";
+import { requireRoleApi } from "@/lib/auth";
+
+type Ctx = { params: { id: string } };
+
+export async function GET(_: Request, { params }: Ctx) {
+  const auth = await requireRoleApi(["admin", "trainer", "viewer"]);
+  if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+
+  await dbConnect();
+  const doc = await Player.findById(params.id);
+  if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json(doc);
+}
+
+export async function PUT(req: Request, { params }: Ctx) {
+  const auth = await requireRoleApi(["admin", "trainer"]);
+  if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+
+  await dbConnect();
+  const body = await req.json();
+  const parsed = playerSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+
+  const payload = parsed.data;
+  const updated = await Player.findByIdAndUpdate(
+    params.id,
+    { ...payload, birthDate: payload.birthDate ? new Date(payload.birthDate) : undefined },
+    { new: true }
+  );
+
+  if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json(updated);
+}
+
+export async function DELETE(_: Request, { params }: Ctx) {
+  const auth = await requireRoleApi(["admin", "trainer"]);
+  if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+
+  await dbConnect();
+  const deleted = await Player.findByIdAndDelete(params.id);
+  if (!deleted) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json({ ok: true });
+}

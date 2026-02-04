@@ -1,37 +1,51 @@
-// src/app/api/admin/users/route.ts
-import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
+﻿import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { User } from "@/models/User";
-import { userCreateSchema } from "@/lib/validators";
-import { requireRole } from "@/lib/auth";
+import { requireRoleApi } from "@/lib/auth";
+import { z } from "zod";
+import bcrypt from "bcryptjs";
+
+const createUserSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1),
+  password: z.string().min(6),
+  role: z.enum(["admin", "trainer", "viewer"]).default("trainer"),
+});
+
+export async function GET() {
+  const auth = await requireRoleApi(["admin"]);
+  if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+
+  await dbConnect();
+
+  const users = await User.find().select("email name role createdAt").sort({ createdAt: -1 });
+  return NextResponse.json(users);
+}
 
 export async function POST(req: Request) {
-  await requireRole(["admin"]);
+  const auth = await requireRoleApi(["admin"]);
+  if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+
   await dbConnect();
 
   const body = await req.json();
-  const parsed = userCreateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  const parsed = createUserSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const email = parsed.data.email.toLowerCase().trim();
-  const exists = await User.findOne({ email }).lean();
-  if (exists) {
-    return NextResponse.json({ error: "User already exists" }, { status: 409 });
-  }
+  const exists = await User.findOne({ email: parsed.data.email });
+  if (exists) return NextResponse.json({ error: "Użytkownik już istnieje" }, { status: 409 });
 
-  const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+  const hash = await bcrypt.hash(parsed.data.password, 10);
+
   const created = await User.create({
-    email,
+    email: parsed.data.email,
     name: parsed.data.name,
-    role: parsed.data.role ?? "trainer",
-    passwordHash,
+    role: parsed.data.role,
+    passwordHash: hash,
   });
 
   return NextResponse.json(
-    { id: String(created._id), email: created.email, name: created.name, role: created.role },
+    { id: created._id, email: created.email, name: created.name, role: created.role },
     { status: 201 }
   );
 }

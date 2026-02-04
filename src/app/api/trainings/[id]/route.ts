@@ -4,19 +4,21 @@ import { TrainingSession } from "@/models/TrainingSession";
 import { trainingSchema } from "@/lib/validators";
 import { requireRoleApi } from "@/lib/auth";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_: Request, { params }: Ctx) {
   const auth = await requireRoleApi(["admin", "trainer", "viewer"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
 
   await dbConnect();
-  const doc = await TrainingSession.findById(params.id);
+  const { id } = await params;
+  const doc = await TrainingSession.findById(id);
   if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(doc);
 }
 
 export async function PUT(req: Request, { params }: Ctx) {
+  const { id } = await params;
   const auth = await requireRoleApi(["admin", "trainer"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
 
@@ -29,7 +31,7 @@ export async function PUT(req: Request, { params }: Ctx) {
   const payload = parsed.data;
 
   const updated = await TrainingSession.findByIdAndUpdate(
-    params.id,
+    id,
     { ...payload, date: new Date(payload.date) },
     { new: true }
   );
@@ -44,7 +46,8 @@ export async function DELETE(_: Request, { params }: Ctx) {
 
   await dbConnect();
 
-  const deleted = await TrainingSession.findByIdAndDelete(params.id);
+  const { id } = await params;
+  const deleted = await TrainingSession.findByIdAndDelete(id);
   if (!deleted) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ ok: true });
 }

@@ -24,10 +24,11 @@ export async function PUT(req: Request, { params }: Ctx) {
 
   await dbConnect();
   const body = await req.json();
-  const parsed = playerSchema.safeParse(body);
+  // allow partial updates (e.g. only trainers) — use partial schema
+  const parsed = playerSchema.partial().safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const payload = parsed.data;
+  const payload = parsed.data as any;
   const updated = await Player.findByIdAndUpdate(
     id,
     { ...payload, birthDate: payload.birthDate ? new Date(payload.birthDate) : undefined },

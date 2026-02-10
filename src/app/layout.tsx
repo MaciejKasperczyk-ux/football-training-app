@@ -41,6 +41,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/trainings">
                       Treningi
                     </Link>
+                    <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/skills">
+                      Umiejętności
+                    </Link>
                     {role === "admin" ? (
                       <>
                         <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/admin/trainers">

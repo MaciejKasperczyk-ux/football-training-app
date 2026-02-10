@@ -102,6 +102,47 @@ export default function AdminSkillsPage() {
     await fetchAll();
   }
 
+  async function deleteSkill(id: string) {
+    if (!confirm("Usunąć umiejętność?")) return;
+    const res = await fetch(`/api/skills/${id}`, { method: "DELETE" });
+    if (!res.ok) return setError("Błąd usuwania umiejętności");
+    await fetchAll();
+  }
+
+  // editing
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editSelectedSubIds, setEditSelectedSubIds] = useState<string[]>([]);
+
+  function startEdit(k: Skill) {
+    setEditingId(k._id);
+    setEditName(k.name);
+    setEditSelectedSubIds((k.details || []).map((d) => d._id));
+  }
+
+  function toggleEditSelect(id: string) {
+    setEditSelectedSubIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingId) return;
+    const res = await fetch(`/api/skills/${editingId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: editName, details: editSelectedSubIds }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      setError(data?.error ? JSON.stringify(data.error) : "Błąd aktualizacji");
+      return;
+    }
+    setEditingId(null);
+    setEditName("");
+    setEditSelectedSubIds([]);
+    await fetchAll();
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Zarządzanie umiejętnościami</h1>
@@ -167,8 +208,34 @@ export default function AdminSkillsPage() {
               <ul className="space-y-3">
                 {skills.map((k) => (
                   <li key={k._id} className="border-b pb-2">
-                    <div className="font-medium">{k.name}</div>
-                    <div className="text-xs text-slate-600 mt-1">{(k.details || []).map(d => d.name).join(", ")}</div>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="font-medium">{k.name}</div>
+                        <div className="text-xs text-slate-600 mt-1">{(k.details || []).map((d) => d.name).join(", ")}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => startEdit(k)} className="rounded bg-blue-600 px-2 py-1 text-xs text-white">Edytuj</button>
+                        <button onClick={() => deleteSkill(k._id)} className="rounded bg-red-600 px-2 py-1 text-xs text-white">Usuń</button>
+                      </div>
+                    </div>
+
+                    {editingId === k._id ? (
+                      <form onSubmit={saveEdit} className="mt-3 space-y-2">
+                        <input className="w-full rounded border px-3 py-2" value={editName} onChange={(e) => setEditName(e.target.value)} required />
+                        <div className="grid grid-cols-1 gap-1 text-sm">
+                          {subskills.map((s) => (
+                            <label key={s._id} className="flex items-center gap-2">
+                              <input type="checkbox" checked={editSelectedSubIds.includes(s._id)} onChange={() => toggleEditSelect(s._id)} />
+                              <span>{s.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <button className="rounded bg-black px-3 py-2 text-white" type="submit">Zapisz</button>
+                          <button type="button" onClick={() => setEditingId(null)} className="rounded border px-3 py-2">Anuluj</button>
+                        </div>
+                      </form>
+                    ) : null}
                   </li>
                 ))}
               </ul>

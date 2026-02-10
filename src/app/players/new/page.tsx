@@ -13,6 +13,8 @@ export default function NewPlayerPage() {
   const [club, setClub] = useState("");
   const [position, setPosition] = useState("");
   const [age, setAge] = useState<string>("");
+  const [birthDate, setBirthDate] = useState<string>("");
+  const [dominantFoot, setDominantFoot] = useState<string>("");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,6 +30,8 @@ export default function NewPlayerPage() {
         club: club || undefined,
         position: position || undefined,
         age: age ? Number(age) : undefined,
+        birthDate: birthDate || undefined,
+        dominantFoot: dominantFoot || undefined,
       }),
     });
 
@@ -76,13 +80,17 @@ export default function NewPlayerPage() {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1">
-            <label className="text-sm">Wiek</label>
-            <input
-              className="rounded border px-3 py-2"
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
-              inputMode="numeric"
-            />
+            <label className="text-sm">Data urodzenia</label>
+            <input type="date" className="rounded border px-3 py-2" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+          </div>
+
+          <div className="grid gap-1">
+            <label className="text-sm">Lepsza noga</label>
+            <select className="rounded border px-3 py-2" value={dominantFoot} onChange={(e) => setDominantFoot(e.target.value)}>
+              <option value="">Wybierz</option>
+              <option value="left">Lewa</option>
+              <option value="right">Prawa</option>
+            </select>
           </div>
         </div>
 

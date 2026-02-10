@@ -30,6 +30,9 @@ export async function POST(req: Request) {
     club: body.club ? String(body.club) : undefined,
     position: body.position ? String(body.position) : undefined,
     age: typeof body.age === "number" ? body.age : undefined,
+    birthDate: body.birthDate ? new Date(String(body.birthDate)) : undefined,
+    dominantFoot: body.dominantFoot ? String(body.dominantFoot) : undefined,
+    trainers: Array.isArray(body.trainers) ? body.trainers.map((x: any) => String(x)) : undefined,
   });
 
   return NextResponse.json(created, { status: 201 });

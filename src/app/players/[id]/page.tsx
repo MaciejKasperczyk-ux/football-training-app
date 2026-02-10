@@ -6,6 +6,7 @@ import { Skill } from "@/models/Skill";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import DeletePlayerButton from "@/components/players/DeletePlayerButton";
+import EditPlayerPanel from "@/components/players/EditPlayerPanel";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -114,18 +115,7 @@ export default async function PlayerPage({ params }: PageProps) {
             <div className="mt-2 grid gap-1 text-sm text-gray-600">
               <div>{player.club ? `Klub: ${player.club}` : "Klub: brak"}</div>
               <div>{player.position ? `Pozycja: ${player.position}` : "Pozycja: brak"}</div>
-              <div>{player.age ? `Wiek: ${player.age}` : "Wiek: brak"}</div>
-              <div>
-                Trenerzy: {player.trainers && player.trainers.length > 0 ? (
-                  <span className="inline-flex gap-2">
-                    {player.trainers.map((t: any) => (
-                      <span key={t._id} className="inline-block rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">{t.name ?? t.email}</span>
-                    ))}
-                  </span>
-                ) : (
-                  <span className="text-gray-500">Brak przypisanych trenerów</span>
-                )}
-              </div>
+              <div>{player.birthDate ? `Wiek: ${Math.floor((Date.now() - new Date(player.birthDate).getTime()) / 1000 / 60 / 60 / 24 / 365)}` : (player.age ? `Wiek: ${player.age}` : "Wiek: brak")}</div>
             </div>
           </div>
 
@@ -137,6 +127,7 @@ export default async function PlayerPage({ params }: PageProps) {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
+          <EditPlayerPanel player={player} playerId={String(player._id)} />
           <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div className="border-b border-gray-200 bg-gray-50 px-5 py-4">
               <div className="text-lg font-semibold tracking-tight">Historia treningów</div>

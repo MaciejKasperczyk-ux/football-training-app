@@ -1,16 +1,21 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
-import { Skill } from "@/models/Skill";
-import { skillSchema } from "@/lib/validators";
+import { SubSkill } from "@/models/SubSkill";
 import { requireRoleApi } from "@/lib/auth";
+import { z } from "zod";
+
+const subSkillSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
+});
 
 export async function GET() {
   const auth = await requireRoleApi(["admin", "trainer", "viewer"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
 
   await dbConnect();
-  const skills = await Skill.find().populate("details").sort({ name: 1 });
-  return NextResponse.json(skills);
+  const subs = await SubSkill.find().sort({ name: 1 });
+  return NextResponse.json(subs);
 }
 
 export async function POST(req: Request) {
@@ -20,11 +25,9 @@ export async function POST(req: Request) {
   await dbConnect();
 
   const body = await req.json();
-  const parsed = skillSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  const parsed = subSkillSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const created = await Skill.create(parsed.data);
+  const created = await SubSkill.create(parsed.data);
   return NextResponse.json(created, { status: 201 });
 }

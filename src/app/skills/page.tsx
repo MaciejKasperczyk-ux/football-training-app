@@ -19,7 +19,7 @@ export default async function SkillsPage() {
   }
 
   await dbConnect();
-  const skills = await Skill.find().sort({ name: 1 }).lean();
+  const skills = await Skill.find().populate("details").sort({ name: 1 }).lean();
 
   return (
     <div className="space-y-5">
@@ -29,9 +29,11 @@ export default async function SkillsPage() {
           <div className="text-sm text-gray-700 mt-1">Lista umiejętności i ich detali</div>
         </div>
 
-        <Link className="rounded bg-black px-3 py-2 text-white text-sm" href="/skills/new">
-          Dodaj umiejętność
-        </Link>
+        {session?.user && (session.user as any).role === "admin" ? (
+          <Link className="rounded bg-black px-3 py-2 text-white text-sm" href="/admin/skills">
+            Zarządzaj umiejętnościami
+          </Link>
+        ) : null}
       </div>
 
       <div className="rounded border bg-white overflow-hidden">

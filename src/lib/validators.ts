@@ -23,14 +23,8 @@ export const playerSchema = z.object({
 export const skillSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
-  details: z
-    .array(
-      z.object({
-        name: z.string().min(1),
-        description: z.string().optional(),
-      })
-    )
-    .optional(),
+  // list of SubSkill ids
+  details: z.array(z.string().min(1)).optional(),
 });
 
 export const trainingSchema = z.object({

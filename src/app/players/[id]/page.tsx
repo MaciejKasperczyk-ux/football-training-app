@@ -6,8 +6,6 @@ import { Skill } from "@/models/Skill";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import DeletePlayerButton from "@/components/players/DeletePlayerButton";
-import PlayerGoals from "@/components/players/PlayerGoals";
-import PlayerSkillsManager from "@/components/players/PlayerSkillsManager";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -37,7 +35,7 @@ export default async function PlayerPage({ params }: PageProps) {
 
   await dbConnect();
 
-  const player = await Player.findById(id).lean();
+  const player = await Player.findById(id).populate("trainers").lean();
   if (!player) {
     return (
       <div className="space-y-3">
@@ -85,7 +83,7 @@ export default async function PlayerPage({ params }: PageProps) {
       if (e.detailId) {
         const did = String(e.detailId);
         const detail = (skill.details ?? []).find((d: any) => String(d._id) === did);
-        const dName = detail ? String(detail.name) : "Detal";
+        const dName = detail ? String(detail.name) : "Podumiejętność";
 
         const existing = agg.details[did];
         if (!existing) {
@@ -117,13 +115,21 @@ export default async function PlayerPage({ params }: PageProps) {
               <div>{player.club ? `Klub: ${player.club}` : "Klub: brak"}</div>
               <div>{player.position ? `Pozycja: ${player.position}` : "Pozycja: brak"}</div>
               <div>{player.age ? `Wiek: ${player.age}` : "Wiek: brak"}</div>
+              <div>
+                Trenerzy: {player.trainers && player.trainers.length > 0 ? (
+                  <span className="inline-flex gap-2">
+                    {player.trainers.map((t: any) => (
+                      <span key={t._id} className="inline-block rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">{t.name ?? t.email}</span>
+                    ))}
+                  </span>
+                ) : (
+                  <span className="text-gray-500">Brak przypisanych trenerów</span>
+                )}
+              </div>
             </div>
           </div>
 
           <div className="flex gap-2">
-            <Link className="inline-flex items-center justify-center rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800" href={`/trainings/new?playerId=${String(player._id)}`}>
-              Dodaj trening
-            </Link>
             <DeletePlayerButton playerId={String(player._id)} />
           </div>
         </div>
@@ -131,8 +137,6 @@ export default async function PlayerPage({ params }: PageProps) {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <PlayerSkillsManager playerId={String(player._id)} />
-
           <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div className="border-b border-gray-200 bg-gray-50 px-5 py-4">
               <div className="text-lg font-semibold tracking-tight">Historia treningów</div>
@@ -160,8 +164,6 @@ export default async function PlayerPage({ params }: PageProps) {
         </div>
 
         <div className="space-y-4">
-          <PlayerGoals playerId={String(player._id)} />
-
           <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div className="border-b border-gray-200 bg-gray-50 px-5 py-4">
               <div className="text-lg font-semibold tracking-tight">Podsumowanie umiejętności</div>

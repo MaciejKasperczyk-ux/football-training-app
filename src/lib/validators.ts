@@ -18,6 +18,7 @@ export const playerSchema = z.object({
   dominantFoot: z.enum(["left", "right", "both"]).optional(),
   notes: z.string().optional(),
   isActive: z.boolean().optional(),
+  trainers: z.array(z.string().min(1)).optional(),
 });
 
 export const skillSchema = z.object({

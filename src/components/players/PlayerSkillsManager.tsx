@@ -122,7 +122,7 @@ export default function PlayerSkillsManager({ playerId }: { playerId: string }) 
     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       <div className="border-b border-gray-200 bg-gray-50 px-5 py-4">
         <div className="text-lg font-semibold tracking-tight">Umiejętności i realizacja</div>
-        <div className="mt-1 text-sm text-gray-600">Planowanie, status, daty realizacji i detale</div>
+        <div className="mt-1 text-sm text-gray-600">Planowanie, status, daty realizacji i podumiejętności</div>
       </div>
 
       <div className="p-5">
@@ -141,7 +141,7 @@ export default function PlayerSkillsManager({ playerId }: { playerId: string }) 
             </div>
 
             <div className="grid gap-1">
-              <label className="text-sm">Detal</label>
+              <label className="text-sm">Podumiejętność</label>
               <select
                 className="rounded-xl border border-gray-200 px-3 py-2"
                 value={detailId}

@@ -19,11 +19,20 @@ export default function AdminSkillsPage() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [subQuery, setSubQuery] = useState("");
+  const [skillQuery, setSkillQuery] = useState("");
+
+  const filteredSubskills = subskills.filter((s) => s.name.toLowerCase().includes(subQuery.toLowerCase()));
+  const [skillPage, setSkillPage] = useState(1);
+  const itemsPerPage = 10;
+  const filteredSkills = skills.filter((k) => k.name.toLowerCase().includes(skillQuery.toLowerCase()));
+  const displayedSkills = filteredSkills.slice(0, skillPage * itemsPerPage);
 
   // create subskill
   const [subName, setSubName] = useState("");
   const [subDesc, setSubDesc] = useState("");
   const [creatingSub, setCreatingSub] = useState(false);
+  const [showAllSubs, setShowAllSubs] = useState(false);
 
   // create skill
   const [skillName, setSkillName] = useState("");
@@ -74,20 +83,24 @@ export default function AdminSkillsPage() {
     e.preventDefault();
     setCreatingSkill(true);
     setError(null);
-    const res = await fetch("/api/skills", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: skillName, details: selectedSubIds }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data?.error ? JSON.stringify(data.error) : "Błąd tworzenia umiejętności");
-      setCreatingSkill(false);
-      return;
+    try {
+      const res = await fetch("/api/skills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: skillName, details: selectedSubIds }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(data?.error ? JSON.stringify(data.error) : "Błąd tworzenia umiejętności");
+        setCreatingSkill(false);
+        return;
+      }
+      setSkillName("");
+      setSelectedSubIds([]);
+      await fetchAll();
+    } catch (e) {
+      setError("Błąd tworzenia umiejętności");
     }
-    setSkillName("");
-    setSelectedSubIds([]);
-    await fetchAll();
     setCreatingSkill(false);
   }
 
@@ -96,17 +109,35 @@ export default function AdminSkillsPage() {
   }
 
   async function deleteSub(id: string) {
-    if (!confirm("Usunąć podumiejętność?")) return;
-    const res = await fetch(`/api/subskills/${id}`, { method: "DELETE" });
-    if (!res.ok) return setError("Błąd usuwania");
-    await fetchAll();
+    if (!confirm("Usuń podumiejętność?")) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/subskills/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const d = await res.json().catch(() => null);
+        setError(d?.error ? JSON.stringify(d.error) : "Błąd usuwania");
+      }
+      await fetchAll();
+    } catch (e) {
+      setError("Błąd usuwania");
+    }
+    setLoading(false);
   }
 
   async function deleteSkill(id: string) {
-    if (!confirm("Usunąć umiejętność?")) return;
-    const res = await fetch(`/api/skills/${id}`, { method: "DELETE" });
-    if (!res.ok) return setError("Błąd usuwania umiejętności");
-    await fetchAll();
+    if (!confirm("Usuń umiejętność?")) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/skills/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const d = await res.json().catch(() => null);
+        setError(d?.error ? JSON.stringify(d.error) : "Błąd usuwania");
+      }
+      await fetchAll();
+    } catch (e) {
+      setError("Błąd usuwania");
+    }
+    setLoading(false);
   }
 
   // editing
@@ -158,22 +189,37 @@ export default function AdminSkillsPage() {
 
           <div className="mt-4">
             <h3 className="text-sm font-medium">Istniejące podumiejętności</h3>
+            <div className="mt-2">
+              <input
+                placeholder="Szukaj podumiejętności..."
+                value={subQuery}
+                onChange={(e) => setSubQuery(e.target.value)}
+                className="w-full rounded border px-3 py-2 text-sm"
+              />
+            </div>
             {subskills.length === 0 ? (
               <p className="text-sm mt-2">Brak</p>
             ) : (
-              <ul className="mt-2 space-y-2 text-sm">
-                {subskills.map((s) => (
-                  <li key={s._id} className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">{s.name}</div>
-                      <div className="text-xs text-slate-600">{s.description}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => deleteSub(s._id)} className="rounded bg-red-600 px-2 py-1 text-xs text-white">Usuń</button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-2 text-sm">
+                <ul className="space-y-2" style={{ maxHeight: 280, overflow: 'auto' }}>
+                  {(showAllSubs ? filteredSubskills : filteredSubskills.slice(0, 10)).map((s) => (
+                    <li key={s._id} className="flex items-center justify-between py-2 border-b">
+                      <div>
+                        <div className="font-medium">{s.name}</div>
+                        <div className="text-xs text-slate-600">{s.description}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => deleteSub(s._id)} className="rounded bg-red-600 px-2 py-1 text-xs text-white">Usuń</button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                {filteredSubskills.length > 10 ? (
+                  <div className="mt-2">
+                    <button onClick={() => setShowAllSubs(!showAllSubs)} className="text-sm text-slate-700 underline">{showAllSubs ? 'Pokaż mniej' : `Pokaż wszystkie (${filteredSubskills.length})`}</button>
+                  </div>
+                ) : null}
+              </div>
             )}
           </div>
         </div>
@@ -201,19 +247,30 @@ export default function AdminSkillsPage() {
       </div>
 
       <div className="rounded border bg-white p-4">
-        <h2 className="text-lg font-medium">Lista umiejętności</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">Lista umiejętności</h2>
+          <div className="w-1/3">
+            <input
+              placeholder="Szukaj umiejętności..."
+              value={skillQuery}
+              onChange={(e) => { setSkillQuery(e.target.value); setSkillPage(1); }}
+              className="w-full rounded border px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
         {loading ? (<p className="text-sm">Ładowanie...</p>) : (
           <div className="mt-3 text-sm">
             {skills.length === 0 ? <p>Brak</p> : (
               <ul className="space-y-3">
-                {skills.map((k) => (
+                {displayedSkills.map((k) => (
                   <li key={k._id} className="border-b pb-2">
-                    <div className="flex items-start justify-between">
-                      <div>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
                         <div className="font-medium">{k.name}</div>
                         <div className="text-xs text-slate-600 mt-1">{(k.details || []).map((d) => d.name).join(", ")}</div>
                       </div>
                       <div className="flex items-center gap-2">
+                        <div className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">{(k.details || []).length} podum.</div>
                         <button onClick={() => startEdit(k)} className="rounded bg-blue-600 px-2 py-1 text-xs text-white">Edytuj</button>
                         <button onClick={() => deleteSkill(k._id)} className="rounded bg-red-600 px-2 py-1 text-xs text-white">Usuń</button>
                       </div>
@@ -240,6 +297,12 @@ export default function AdminSkillsPage() {
                 ))}
               </ul>
             )}
+
+            {displayedSkills.length < filteredSkills.length ? (
+              <div className="mt-3 text-center">
+                <button onClick={() => setSkillPage((p) => p + 1)} className="rounded border px-3 py-2">Pokaż więcej</button>
+              </div>
+            ) : null}
           </div>
         )}
       </div>

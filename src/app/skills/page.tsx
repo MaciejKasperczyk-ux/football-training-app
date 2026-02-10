@@ -26,7 +26,7 @@ export default async function SkillsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Umiejętności</h1>
-          <div className="text-sm text-gray-700 mt-1">Lista umiejętności i ich detali</div>
+          <div className="text-sm text-gray-700 mt-1">Lista umiejętności i ich podumiejętności</div>
         </div>
 
         {session?.user && (session.user as any).role === "admin" ? (
@@ -39,7 +39,7 @@ export default async function SkillsPage() {
       <div className="rounded border bg-white overflow-hidden">
         <div className="grid grid-cols-12 gap-2 border-b p-3 text-sm font-medium bg-gray-50">
           <div className="col-span-6">Nazwa</div>
-          <div className="col-span-4">Liczba detali</div>
+          <div className="col-span-4">Liczba podumiejętności</div>
           <div className="col-span-2 text-right">Akcje</div>
         </div>
 

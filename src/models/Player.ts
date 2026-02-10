@@ -12,6 +12,7 @@ const PlayerSchema = new Schema(
     dominantFoot: { type: String, enum: ["left", "right", "both"], required: false },
     notes: { type: String, required: false },
     isActive: { type: Boolean, default: true },
+    trainers: [{ type: Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );

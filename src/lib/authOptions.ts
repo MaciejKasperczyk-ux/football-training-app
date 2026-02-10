@@ -34,6 +34,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          hasPasswordChanged: user.hasPasswordChanged,
         } as any;
       },
     }),
@@ -43,6 +44,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = (user as any).role;
         token.name = (user as any).name;
+        token.hasPasswordChanged = (user as any).hasPasswordChanged;
       }
       return token;
     },
@@ -50,6 +52,7 @@ export const authOptions: NextAuthOptions = {
       (session as any).user = session.user ?? {};
       (session.user as any).role = token.role;
       (session.user as any).name = token.name as any;
+      (session.user as any).hasPasswordChanged = token.hasPasswordChanged;
       return session;
     },
   },

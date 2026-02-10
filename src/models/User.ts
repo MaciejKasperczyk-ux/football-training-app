@@ -7,6 +7,7 @@ const UserSchema = new Schema(
     name: { type: String, required: true, trim: true },
     role: { type: String, enum: ["admin", "trainer", "viewer"], default: "trainer" },
     passwordHash: { type: String, required: true },
+    hasPasswordChanged: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

@@ -1,4 +1,5 @@
 ﻿import { Schema, model, models } from "mongoose";
+import "./SubSkill";
 
 const SkillSchema = new Schema(
   {

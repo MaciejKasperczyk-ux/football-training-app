@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/authOptions";
 
 export const metadata: Metadata = {
   title: "Trening indywidualny piłki nożnej",
-  description: "Baza zawodników, cele, treningi, testy i raporty",
+  description: "Baza zawodników, cele i treningi",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -38,9 +38,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   </Link>
                   <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/trainings">
                     Treningi
-                  </Link>
-                  <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/tests">
-                    Testy
                   </Link>
                   {role === "admin" ? (
                     <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/admin/users">

@@ -53,17 +53,3 @@ export const trainingSchema = z.object({
     )
     .optional(),
 });
-
-export const testSchema = z.object({
-  name: z.string().min(1),
-  unit: z.string().optional(),
-  description: z.string().optional(),
-});
-
-export const testResultSchema = z.object({
-  playerId: z.string().min(1),
-  testId: z.string().min(1),
-  date: z.string().min(1),
-  value: z.number(),
-  notes: z.string().optional(),
-});

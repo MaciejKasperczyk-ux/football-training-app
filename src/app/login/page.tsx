@@ -21,7 +21,7 @@ export default function LoginPage() {
       callbackUrl: "/",
     });
 
-    if ((res as any)?.error) setError("Bledne dane logowania");
+    if (res?.error) setError("Bledne dane logowania");
     setLoading(false);
   }
 

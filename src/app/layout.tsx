@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { Providers } from "@/app/providers";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 export const metadata: Metadata = {
   title: "Trening indywidualny piłki nożnej",
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
-  const role = (session?.user as any)?.role as string | undefined;
+  const role = (session?.user as { role?: string } | undefined)?.role;
 
   return (
     <html lang="pl">
@@ -63,7 +64,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </header>
           )}
 
-          <main className="app-shell">{children}</main>
+          <main className="app-shell pb-24 md:pb-8">{children}</main>
+          {session ? <MobileBottomNav role={role} /> : null}
         </Providers>
       </body>
     </html>

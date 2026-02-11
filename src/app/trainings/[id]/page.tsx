@@ -1,42 +1,72 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
-type Training = any;
+type Training = {
+  date: string;
+  players?: string[];
+  entries?: { skillId: string; detailId?: string }[];
+};
 
-export default function TrainingDetail({ params }: { params: { id: string } }) {
+type ReportRow = {
+  playerId: string;
+  skillId: string;
+  detailId?: string;
+  learned: boolean;
+  notes: string;
+};
+
+export default function TrainingDetail() {
   const router = useRouter();
-  const { id } = params;
+  const routeParams = useParams<{ id?: string }>();
+  const id = routeParams?.id ?? "";
+  const missingId = !id;
+
   const [training, setTraining] = useState<Training | null>(null);
   const [loading, setLoading] = useState(false);
-  const [reports, setReports] = useState<any[]>([]);
+  const [reports, setReports] = useState<ReportRow[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!id) return;
+
     async function load() {
       const res = await fetch(`/api/trainings/${id}`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        setLoadError("Nie udalo sie zaladowac treningu.");
+        return;
+      }
+
       const data = await res.json();
       setTraining(data);
+      setLoadError(null);
 
-      // prepare empty reports per player x entry
-      const r: any[] = [];
-      for (const p of data.players ?? []) {
-        for (const e of data.entries ?? []) {
-          r.push({ playerId: p, skillId: e.skillId, detailId: e.detailId ?? undefined, learned: false, notes: "" });
+      const prepared: ReportRow[] = [];
+      for (const playerId of data.players ?? []) {
+        for (const entry of data.entries ?? []) {
+          prepared.push({
+            playerId,
+            skillId: entry.skillId,
+            detailId: entry.detailId ?? undefined,
+            learned: false,
+            notes: "",
+          });
         }
       }
-      setReports(r);
+      setReports(prepared);
     }
+
     load();
   }, [id]);
 
-  function setReport(i: number, key: string, value: any) {
-    setReports((prev) => prev.map((x, idx) => (idx === i ? { ...x, [key]: value } : x)));
+  function setReport(i: number, key: keyof ReportRow, value: string | boolean | undefined) {
+    setReports((prev) => prev.map((row, idx) => (idx === i ? { ...row, [key]: value } : row)));
   }
 
   async function submit() {
-    if (!training) return;
+    if (!training || !id) return;
+
     setLoading(true);
     const res = await fetch(`/api/trainings/${id}/report`, {
       method: "POST",
@@ -44,44 +74,48 @@ export default function TrainingDetail({ params }: { params: { id: string } }) {
       body: JSON.stringify({ reports }),
     });
     setLoading(false);
+
     if (!res.ok) {
-      alert("Nie udało się wysłać raportu");
+      alert("Nie udalo sie wyslac raportu.");
       return;
     }
+
     router.push(training.players && training.players.length === 1 ? `/players/${training.players[0]}` : "/trainings");
     router.refresh();
   }
 
-  if (!training) return <div>Ładowanie...</div>;
+  if (missingId) return <div className="text-sm text-red-600">Brak identyfikatora treningu.</div>;
+  if (loadError) return <div className="text-sm text-red-600">{loadError}</div>;
+  if (!training) return <div>Ladowanie...</div>;
 
   return (
-    <div className="space-y-4 max-w-3xl">
-      <h1 className="text-2xl font-semibold">Szczegóły treningu</h1>
+    <div className="max-w-3xl space-y-4">
+      <h1 className="text-2xl font-semibold">Szczegoly treningu</h1>
 
       <div className="rounded border bg-white p-4">
         <div className="text-sm">Data: {new Date(training.date).toLocaleDateString("pl-PL")}</div>
         <div className="text-sm">Zawodnicy: {(training.players || []).join(", ")}</div>
-        <div className="text-sm">Elementów: {(training.entries || []).length}</div>
+        <div className="text-sm">Elementow: {(training.entries || []).length}</div>
       </div>
 
       <div className="rounded border bg-white p-4">
-        <div className="font-medium">Raport — zaznacz czy zawodnik się nauczył</div>
+        <div className="font-medium">Raport - zaznacz czy zawodnik sie nauczyl</div>
         <div className="mt-3 grid gap-3">
-          {reports.map((r, i) => (
-            <div key={i} className="rounded border p-3 flex items-center gap-3">
-              <div className="text-sm">Zawodnik: {r.playerId}</div>
-              <div className="text-sm">Skill: {r.skillId}</div>
+          {reports.map((row, i) => (
+            <div key={i} className="flex items-center gap-3 rounded border p-3">
+              <div className="text-sm">Zawodnik: {row.playerId}</div>
+              <div className="text-sm">Skill: {row.skillId}</div>
               <label className="text-sm">
-                <input type="checkbox" checked={r.learned} onChange={(e) => setReport(i, "learned", e.target.checked)} /> Nauczony
+                <input type="checkbox" checked={row.learned} onChange={(e) => setReport(i, "learned", e.target.checked)} /> Nauczony
               </label>
-              <input className="ml-auto rounded border px-2 py-1" placeholder="Notatka" value={r.notes} onChange={(e) => setReport(i, "notes", e.target.value)} />
+              <input className="ml-auto rounded border px-2 py-1" placeholder="Notatka" value={row.notes} onChange={(e) => setReport(i, "notes", e.target.value)} />
             </div>
           ))}
         </div>
 
         <div className="mt-4">
           <button disabled={loading} onClick={submit} className="rounded bg-black px-3 py-2 text-white">
-            {loading ? "Wysyłanie..." : "Wyślij raport"}
+            {loading ? "Wysylanie..." : "Wyslij raport"}
           </button>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { dbConnect } from "@/lib/mongodb";
 import { TrainingSession } from "@/models/TrainingSession";
 import { trainingSchema } from "@/lib/validators";
 import { requireRoleApi } from "@/lib/auth";
+import { isValidObjectId } from "mongoose";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -12,6 +13,7 @@ export async function GET(_: Request, { params }: Ctx) {
 
   await dbConnect();
   const { id } = await params;
+  if (!isValidObjectId(id)) return NextResponse.json({ error: "Invalid training id" }, { status: 400 });
   const doc = await TrainingSession.findById(id);
   if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(doc);
@@ -19,6 +21,7 @@ export async function GET(_: Request, { params }: Ctx) {
 
 export async function PUT(req: Request, { params }: Ctx) {
   const { id } = await params;
+  if (!isValidObjectId(id)) return NextResponse.json({ error: "Invalid training id" }, { status: 400 });
   const auth = await requireRoleApi(["admin", "trainer"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
 
@@ -47,6 +50,7 @@ export async function DELETE(_: Request, { params }: Ctx) {
   await dbConnect();
 
   const { id } = await params;
+  if (!isValidObjectId(id)) return NextResponse.json({ error: "Invalid training id" }, { status: 400 });
   const deleted = await TrainingSession.findByIdAndDelete(id);
   if (!deleted) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ ok: true });

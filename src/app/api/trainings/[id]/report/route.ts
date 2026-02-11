@@ -4,6 +4,7 @@ import { TrainingSession } from "@/models/TrainingSession";
 import { PlayerSkill } from "@/models/PlayerSkill";
 import { requireRoleApi } from "@/lib/auth";
 import { z } from "zod";
+import { isValidObjectId } from "mongoose";
 
 const reportSchema = z.object({
   reports: z
@@ -27,6 +28,7 @@ export async function POST(req: Request, { params }: Ctx) {
 
   await dbConnect();
   const { id } = await params;
+  if (!isValidObjectId(id)) return NextResponse.json({ error: "Invalid training id" }, { status: 400 });
 
   const body = await req.json().catch(() => null);
   const parsed = reportSchema.safeParse(body);
@@ -38,7 +40,7 @@ export async function POST(req: Request, { params }: Ctx) {
   const session = await TrainingSession.findById(id);
   if (!session) return NextResponse.json({ error: "Training not found" }, { status: 404 });
 
-  const results: any[] = [];
+  const results: Array<{ playerId: string; skillId: string; ok: boolean; updated: string }> = [];
 
   for (const r of parsed.data.reports) {
     if (r.learned) {
@@ -47,7 +49,7 @@ export async function POST(req: Request, { params }: Ctx) {
         { $set: { status: "zrobione", doneDate: now, notes: r.notes ?? undefined } },
         { upsert: true, new: true }
       );
-      results.push({ playerId: r.playerId, skillId: r.skillId, ok: true, updated: updated._id });
+      results.push({ playerId: r.playerId, skillId: r.skillId, ok: true, updated: String(updated._id) });
     } else {
       // mark as in progress
       const updated = await PlayerSkill.findOneAndUpdate(
@@ -55,7 +57,7 @@ export async function POST(req: Request, { params }: Ctx) {
         { $set: { status: "w_trakcie", notes: r.notes ?? undefined } },
         { upsert: true, new: true }
       );
-      results.push({ playerId: r.playerId, skillId: r.skillId, ok: true, updated: updated._id });
+      results.push({ playerId: r.playerId, skillId: r.skillId, ok: true, updated: String(updated._id) });
     }
   }
 

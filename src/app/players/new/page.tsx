@@ -47,46 +47,46 @@ export default function NewPlayerPage() {
   }
 
   return (
-    <div className="max-w-xl space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold">Dodaj zawodnika</h1>
-        <div className="text-sm text-gray-700 mt-1">Uzupełnij podstawowe informacje. Resztę dodasz później.</div>
+    <div className="page-wrap max-w-3xl">
+      <div className="hero-card">
+        <h1 className="page-title">Nowy zawodnik</h1>
+        <p className="page-subtitle">Wypelnij podstawowe informacje. Szczegoly treningowe dodasz pozniej.</p>
       </div>
 
-      <form onSubmit={onSubmit} className="rounded border bg-white p-4 space-y-4">
+      <form onSubmit={onSubmit} className="surface space-y-4 p-5">
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1">
-            <label className="text-sm">Imię</label>
-            <input className="rounded border px-3 py-2" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            <label className="field-label">Imie</label>
+            <input className="field-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </div>
 
           <div className="grid gap-1">
-            <label className="text-sm">Nazwisko</label>
-            <input className="rounded border px-3 py-2" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            <label className="field-label">Nazwisko</label>
+            <input className="field-input" value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1">
             <label className="text-sm">Klub</label>
-            <input className="rounded border px-3 py-2" value={club} onChange={(e) => setClub(e.target.value)} />
+            <input className="field-input" value={club} onChange={(e) => setClub(e.target.value)} />
           </div>
 
           <div className="grid gap-1">
             <label className="text-sm">Pozycja</label>
-            <input className="rounded border px-3 py-2" value={position} onChange={(e) => setPosition(e.target.value)} />
+            <input className="field-input" value={position} onChange={(e) => setPosition(e.target.value)} />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1">
             <label className="text-sm">Data urodzenia</label>
-            <input type="date" className="rounded border px-3 py-2" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+            <input type="date" className="field-input" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
           </div>
 
           <div className="grid gap-1">
             <label className="text-sm">Lepsza noga</label>
-            <select className="rounded border px-3 py-2" value={dominantFoot} onChange={(e) => setDominantFoot(e.target.value)}>
+            <select className="field-select" value={dominantFoot} onChange={(e) => setDominantFoot(e.target.value)}>
               <option value="">Wybierz</option>
               <option value="left">Lewa</option>
               <option value="right">Prawa</option>
@@ -97,12 +97,12 @@ export default function NewPlayerPage() {
         {error ? <div className="text-sm text-red-600">{error}</div> : null}
 
         <div className="flex gap-2">
-          <button disabled={loading} className="rounded bg-black px-3 py-2 text-white text-sm disabled:opacity-60" type="submit">
+          <button disabled={loading} className="btn btn-primary" type="submit">
             {loading ? "Zapisywanie" : "Zapisz"}
           </button>
           <button
             type="button"
-            className="rounded border px-3 py-2 text-sm hover:bg-gray-50"
+            className="btn btn-secondary"
             onClick={() => router.push("/players")}
           >
             Anuluj

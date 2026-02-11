@@ -26,7 +26,8 @@ export default function PlayerGoals({ playerId }: { playerId: string }) {
   }
 
   useEffect(() => {
-    load();
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerId]);
 
   async function addGoal(e: React.FormEvent) {
@@ -46,7 +47,7 @@ export default function PlayerGoals({ playerId }: { playerId: string }) {
 
     setLoading(false);
     if (!res.ok) {
-      alert("Nie udało się dodać celu");
+      alert("Nie udalo sie dodac celu.");
       return;
     }
 
@@ -63,7 +64,7 @@ export default function PlayerGoals({ playerId }: { playerId: string }) {
     });
 
     if (!res.ok) {
-      alert("Nie udało się zmienić statusu");
+      alert("Nie udalo sie zmienic statusu.");
       return;
     }
 
@@ -71,12 +72,11 @@ export default function PlayerGoals({ playerId }: { playerId: string }) {
   }
 
   async function removeGoal(goalId: string) {
-    const ok = window.confirm("Czy na pewno usunąć cel?");
-    if (!ok) return;
+    if (!window.confirm("Czy na pewno usunac cel?")) return;
 
     const res = await fetch(`/api/goals/${goalId}`, { method: "DELETE" });
     if (!res.ok) {
-      alert("Nie udało się usunąć celu");
+      alert("Nie udalo sie usunac celu.");
       return;
     }
 
@@ -84,80 +84,70 @@ export default function PlayerGoals({ playerId }: { playerId: string }) {
   }
 
   return (
-    <div className="rounded border bg-white overflow-hidden">
-      <div className="border-b p-3 font-medium bg-gray-50">Cele i terminy</div>
-
-      <div className="p-3">
-        <form onSubmit={addGoal} className="grid gap-3">
-          <div className="grid gap-1">
-            <label className="text-sm">Nazwa celu</label>
-            <input className="rounded border px-3 py-2" value={title} onChange={(e) => setTitle(e.target.value)} />
-          </div>
-
-          <div className="grid gap-1">
-            <label className="text-sm">Opis</label>
-            <input className="rounded border px-3 py-2" value={description} onChange={(e) => setDescription(e.target.value)} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-1">
-              <label className="text-sm">Termin</label>
-              <input className="rounded border px-3 py-2" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-            </div>
-
-            <div className="flex items-end">
-              <button
-                disabled={loading || !title.trim()}
-                className="rounded bg-black px-3 py-2 text-white text-sm disabled:opacity-60"
-                type="submit"
-              >
-                {loading ? "Dodawanie" : "Dodaj cel"}
-              </button>
-            </div>
-          </div>
-        </form>
+    <div className="surface p-5">
+      <div className="mb-3">
+        <h2 className="section-title">Cele i terminy</h2>
+        <p className="section-copy">Monitorowanie postepu i deadlinow zawodnika.</p>
       </div>
 
-      <div className="border-t">
+      <form onSubmit={addGoal} className="grid gap-3">
+        <div className="grid gap-1">
+          <label className="field-label">Nazwa celu</label>
+          <input className="field-input" value={title} onChange={(e) => setTitle(e.target.value)} />
+        </div>
+
+        <div className="grid gap-1">
+          <label className="field-label">Opis</label>
+          <input className="field-input" value={description} onChange={(e) => setDescription(e.target.value)} />
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+          <div className="grid gap-1">
+            <label className="field-label">Termin</label>
+            <input className="field-input" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          </div>
+
+          <div className="flex items-end">
+            <button disabled={loading || !title.trim()} className="btn btn-primary" type="submit">
+              {loading ? "Dodawanie..." : "Dodaj cel"}
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <div className="mt-4 grid gap-2">
         {goals.length === 0 ? (
-          <div className="p-3 text-sm">Brak celów</div>
+          <div className="text-sm text-slate-600">Brak celow.</div>
         ) : (
-          goals.map((g) => {
-            const due = new Date(g.dueDate);
-            return (
-              <div key={g._id} className="border-b p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-medium">{g.title}</div>
-                    <div className="text-xs text-gray-700 mt-1">
-                      Termin: {due.toLocaleDateString("pl-PL")} , status: {g.status}
-                    </div>
-                    {g.description ? <div className="text-xs text-gray-700 mt-1">{g.description}</div> : null}
+          goals.map((goal) => (
+            <div key={goal._id} className="surface-muted p-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold">{goal.title}</div>
+                  <div className="mt-1 text-xs text-slate-600">
+                    Termin: {new Date(goal.dueDate).toLocaleDateString("pl-PL")}
                   </div>
+                  {goal.description ? <div className="mt-1 text-xs text-slate-600">{goal.description}</div> : null}
+                </div>
 
-                  <div className="flex gap-2">
-                    <select
-                      className="rounded border px-2 py-1 text-sm"
-                      value={g.status}
-                      onChange={(e) => setStatus(g._id, e.target.value as any)}
-                    >
-                      <option value="planned">plan</option>
-                      <option value="in_progress">w trakcie</option>
-                      <option value="done">zrobione</option>
-                    </select>
+                <div className="flex items-center gap-2">
+                  <select
+                    className="field-select"
+                    value={goal.status}
+                    onChange={(e) => setStatus(goal._id, e.target.value as Goal["status"])}
+                  >
+                    <option value="planned">plan</option>
+                    <option value="in_progress">w trakcie</option>
+                    <option value="done">zrobione</option>
+                  </select>
 
-                    <button
-                      type="button"
-                      className="rounded border px-3 py-2 text-sm hover:bg-gray-50"
-                      onClick={() => removeGoal(g._id)}
-                    >
-                      Usuń
-                    </button>
-                  </div>
+                  <button type="button" className="btn btn-danger" onClick={() => removeGoal(goal._id)}>
+                    Usun
+                  </button>
                 </div>
               </div>
-            );
-          })
+            </div>
+          ))
         )}
       </div>
     </div>

@@ -30,7 +30,7 @@ export default function DeletePlayerButton({ playerId }: { playerId: string }) {
       type="button"
       disabled={loading}
       onClick={onDelete}
-      className="rounded border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
+      className="btn btn-danger"
     >
       {loading ? "Usuwanie" : "Usuń"}
     </button>

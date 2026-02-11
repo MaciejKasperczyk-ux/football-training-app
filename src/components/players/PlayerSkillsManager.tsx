@@ -119,18 +119,18 @@ export default function PlayerSkillsManager({ playerId }: { playerId: string }) 
   };
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-      <div className="border-b border-gray-200 bg-gray-50 px-5 py-4">
-        <div className="text-lg font-semibold tracking-tight">Umiejętności i realizacja</div>
-        <div className="mt-1 text-sm text-gray-600">Planowanie, status, daty realizacji i podumiejętności</div>
+    <div className="surface overflow-hidden">
+      <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
+        <div className="text-lg font-semibold tracking-tight">Umiejetnosci i realizacja</div>
+        <div className="mt-1 text-sm text-slate-600">Planowanie, status i daty realizacji.</div>
       </div>
 
       <div className="p-5">
         <form onSubmit={addRow} className="grid gap-3">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="grid gap-1">
-              <label className="text-sm">Umiejętność</label>
-              <select className="rounded-xl border border-gray-200 px-3 py-2" value={skillId} onChange={(e) => setSkillId(e.target.value)}>
+              <label className="field-label">Umiejetnosc</label>
+              <select className="field-select" value={skillId} onChange={(e) => setSkillId(e.target.value)}>
                 <option value="">Wybierz</option>
                 {skills.map((s) => (
                   <option key={s._id} value={s._id}>
@@ -141,9 +141,9 @@ export default function PlayerSkillsManager({ playerId }: { playerId: string }) 
             </div>
 
             <div className="grid gap-1">
-              <label className="text-sm">Podumiejętność</label>
+              <label className="field-label">Podumiejetnosc</label>
               <select
-                className="rounded-xl border border-gray-200 px-3 py-2"
+                className="field-select"
                 value={detailId}
                 onChange={(e) => setDetailId(e.target.value)}
                 disabled={!selectedSkill || (selectedSkill.details?.length ?? 0) === 0}
@@ -158,23 +158,23 @@ export default function PlayerSkillsManager({ playerId }: { playerId: string }) 
             </div>
 
             <div className="grid gap-1">
-              <label className="text-sm">Planowana data</label>
-              <input className="rounded-xl border border-gray-200 px-3 py-2" type="date" value={plannedDate} onChange={(e) => setPlannedDate(e.target.value)} />
+              <label className="field-label">Planowana data</label>
+              <input className="field-input" type="date" value={plannedDate} onChange={(e) => setPlannedDate(e.target.value)} />
             </div>
           </div>
 
           <div className="grid gap-1">
-            <label className="text-sm">Notatka</label>
-            <input className="rounded-xl border border-gray-200 px-3 py-2" value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <label className="field-label">Notatka</label>
+            <input className="field-input" value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
 
           <div>
             <button
               disabled={loading || !skillId}
-              className="inline-flex items-center justify-center rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-60"
+              className="btn btn-primary"
               type="submit"
             >
-              {loading ? "Dodawanie" : "Przypisz umiejętność"}
+              {loading ? "Dodawanie..." : "Przypisz umiejetnosc"}
             </button>
           </div>
         </form>
@@ -182,24 +182,24 @@ export default function PlayerSkillsManager({ playerId }: { playerId: string }) 
 
       <div className="border-t border-gray-200">
         {rows.length === 0 ? (
-          <div className="p-5 text-sm text-gray-600">Brak przypisanych umiejętności</div>
+          <div className="p-5 text-sm text-slate-600">Brak przypisanych umiejetnosci</div>
         ) : (
           <div className="p-5 grid gap-3">
             {rows.map((r) => (
-              <div key={r._id} className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-4 md:flex-row md:items-center md:justify-between">
+              <div key={r._id} className="surface-muted flex flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
                   <div className="text-sm font-semibold truncate">
                     {skillName(r.skillId)} {detailName(r.skillId, r.detailId) ? `, ${detailName(r.skillId, r.detailId)}` : ""}
                   </div>
-                  <div className="mt-1 text-xs text-gray-600">
+                  <div className="mt-1 text-xs text-slate-600">
                     Plan: {r.plannedDate ? formatDatePL(new Date(r.plannedDate)) : "brak"} , Wykonano: {r.doneDate ? formatDatePL(new Date(r.doneDate)) : "brak"}
                   </div>
-                  {r.notes ? <div className="mt-1 text-xs text-gray-600">{r.notes}</div> : null}
+                  {r.notes ? <div className="mt-1 text-xs text-slate-600">{r.notes}</div> : null}
                 </div>
 
                 <div className="flex flex-col gap-2 md:flex-row md:items-center">
                   <select
-                    className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                    className="field-select"
                     value={r.status}
                     onChange={(e) => updateRow(r._id, { status: e.target.value as any })}
                   >
@@ -209,7 +209,7 @@ export default function PlayerSkillsManager({ playerId }: { playerId: string }) 
                   </select>
 
                   <input
-                    className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                    className="field-input"
                     type="date"
                     value={toDateInput(r.doneDate)}
                     onChange={(e) => updateRow(r._id, { doneDate: e.target.value || undefined })}
@@ -217,7 +217,7 @@ export default function PlayerSkillsManager({ playerId }: { playerId: string }) 
 
                   <button
                     type="button"
-                    className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50"
+                    className="btn btn-danger"
                     onClick={() => removeRow(r._id)}
                   >
                     Usuń

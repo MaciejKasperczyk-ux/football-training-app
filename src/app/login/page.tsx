@@ -1,4 +1,3 @@
-// src/app/login/page.tsx
 "use client";
 
 import { signIn } from "next-auth/react";
@@ -22,49 +21,50 @@ export default function LoginPage() {
       callbackUrl: "/",
     });
 
-    if ((res as any)?.error) setError("Błędne dane logowania");
+    if ((res as any)?.error) setError("Bledne dane logowania");
     setLoading(false);
   }
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center">
-      <form onSubmit={onSubmit} className="w-full max-w-sm rounded border bg-white p-5 space-y-3">
-        <h1 className="text-xl font-semibold">Logowanie</h1>
-
-        <div className="space-y-1">
-          <label className="text-sm">Email</label>
-          <input
-            className="w-full rounded border px-3 py-2"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            type="email"
-            autoComplete="email"
-            required
-          />
+    <div className="min-h-[70vh] grid place-items-center">
+      <div className="w-full max-w-sm space-y-4">
+        <div className="hero-card">
+          <h1 className="page-title">Logowanie</h1>
+          <p className="page-subtitle">Zaloguj sie do panelu trenera.</p>
         </div>
 
-        <div className="space-y-1">
-          <label className="text-sm">Hasło</label>
-          <input
-            className="w-full rounded border px-3 py-2"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-            autoComplete="current-password"
-            required
-          />
-        </div>
+        <form onSubmit={onSubmit} className="surface space-y-3 p-5">
+          <div className="space-y-1">
+            <label className="field-label">Email</label>
+            <input
+              className="field-input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
+              autoComplete="email"
+              required
+            />
+          </div>
 
-        {error ? <div className="text-sm text-red-600">{error}</div> : null}
+          <div className="space-y-1">
+            <label className="field-label">Haslo</label>
+            <input
+              className="field-input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              autoComplete="current-password"
+              required
+            />
+          </div>
 
-        <button
-          disabled={loading}
-          className="w-full rounded bg-black px-3 py-2 text-white disabled:opacity-60"
-          type="submit"
-        >
-          {loading ? "Logowanie..." : "Zaloguj się"}
-        </button>
-      </form>
+          {error ? <div className="text-sm text-red-600">{error}</div> : null}
+
+          <button disabled={loading} className="btn btn-primary w-full" type="submit">
+            {loading ? "Logowanie..." : "Zaloguj sie"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-// src/app/admin/users/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -25,49 +24,54 @@ export default function AdminUsersPage() {
     const data = await res.json().catch(() => null);
 
     if (!res.ok) {
-      setResult(data?.error ? JSON.stringify(data.error) : "Failed");
+      setResult(data?.error ? JSON.stringify(data.error) : "Nie udalo sie utworzyc uzytkownika.");
       setLoading(false);
       return;
     }
 
-    setResult(`Created: ${data.email} role: ${data.role}`);
+    setResult(`Utworzono: ${data.email} (${data.role})`);
     setLoading(false);
   }
 
   return (
-    <div className="max-w-lg space-y-4">
-      <h1 className="text-2xl font-semibold">Create user</h1>
+    <div className="page-wrap max-w-3xl">
+      <div className="hero-card">
+        <h1 className="page-title">Admin - uzytkownicy</h1>
+        <p className="page-subtitle">Tworzenie kont i nadawanie ról dostepowych.</p>
+      </div>
 
-      <form onSubmit={onSubmit} className="rounded border bg-white p-4 space-y-3">
+      <form onSubmit={onSubmit} className="surface space-y-3 p-5">
         <div className="grid gap-1">
-          <label className="text-sm">Email</label>
-          <input className="rounded border px-3 py-2" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <label className="field-label">Email</label>
+          <input className="field-input" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </div>
 
         <div className="grid gap-1">
-          <label className="text-sm">Name</label>
-          <input className="rounded border px-3 py-2" value={name} onChange={(e) => setName(e.target.value)} />
+          <label className="field-label">Nazwa</label>
+          <input className="field-input" value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
 
         <div className="grid gap-1">
-          <label className="text-sm">Password</label>
-          <input className="rounded border px-3 py-2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <label className="field-label">Haslo</label>
+          <input className="field-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
 
         <div className="grid gap-1">
-          <label className="text-sm">Role</label>
-          <select className="rounded border px-3 py-2" value={role} onChange={(e) => setRole(e.target.value as any)}>
-            <option value="trainer">trainer</option>
-            <option value="viewer">viewer</option>
+          <label className="field-label">Rola</label>
+          <select className="field-select" value={role} onChange={(e) => setRole(e.target.value as "admin" | "trainer" | "viewer")}>
+            <option value="trainer">trener</option>
+            <option value="viewer">podglad</option>
             <option value="admin">admin</option>
           </select>
         </div>
 
-        <button disabled={loading} className="rounded bg-black px-3 py-2 text-white text-sm disabled:opacity-60" type="submit">
-          {loading ? "Creating" : "Create"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button disabled={loading} className="btn btn-primary" type="submit">
+            {loading ? "Tworzenie..." : "Utworz konto"}
+          </button>
+        </div>
 
-        {result ? <div className="text-sm text-gray-800">{result}</div> : null}
+        {result ? <div className="text-sm text-slate-700">{result}</div> : null}
       </form>
     </div>
   );

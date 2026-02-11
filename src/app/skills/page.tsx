@@ -22,36 +22,38 @@ export default async function SkillsPage() {
   const skills = await Skill.find().populate("details").sort({ name: 1 }).lean();
 
   return (
-    <div className="space-y-5">
+    <div className="page-wrap">
+      <div className="hero-card">
+        <h1 className="page-title">Umiejetnosci</h1>
+        <p className="page-subtitle">Przegladaj i porzadkuj biblioteke umiejetnosci oraz podumiejetnosci.</p>
+      </div>
+
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Umiejętności</h1>
-          <div className="text-sm text-gray-700 mt-1">Lista umiejętności i ich podumiejętności</div>
-        </div>
+        <div className="text-sm text-slate-600">Lista umiejetnosci i ich podumiejetnosci</div>
 
         {session?.user && (session.user as any).role === "admin" ? (
-          <Link className="rounded bg-black px-3 py-2 text-white text-sm" href="/admin/skills">
-            Zarządzaj umiejętnościami
+          <Link className="btn btn-primary" href="/admin/skills">
+            Zarzadzaj umiejetnosciami
           </Link>
         ) : null}
       </div>
 
-      <div className="rounded border bg-white overflow-hidden">
-        <div className="grid grid-cols-12 gap-2 border-b p-3 text-sm font-medium bg-gray-50">
+      <div className="table-wrap">
+        <div className="table-head grid grid-cols-12 gap-2 p-3 text-sm font-semibold text-slate-700">
           <div className="col-span-6">Nazwa</div>
-          <div className="col-span-4">Liczba podumiejętności</div>
+          <div className="col-span-4">Liczba podumiejetnosci</div>
           <div className="col-span-2 text-right">Akcje</div>
         </div>
 
         {skills.length === 0 ? (
-          <div className="p-3 text-sm">Brak umiejętności</div>
+          <div className="p-4 text-sm text-slate-600">Brak umiejetnosci</div>
         ) : (
           (skills as any[]).map((s) => (
-            <div key={String(s._id)} className="grid grid-cols-12 gap-2 border-b p-3 text-sm items-center">
+            <div key={String(s._id)} className="table-row grid grid-cols-12 gap-2 p-3 text-sm items-center">
               <div className="col-span-6 font-medium">{s.name}</div>
-              <div className="col-span-4">{s.details?.length ?? 0}</div>
+              <div className="col-span-4"><span className="pill">{s.details?.length ?? 0}</span></div>
               <div className="col-span-2 text-right">
-                <Link className="rounded border px-3 py-2 text-sm hover:bg-gray-50" href={`/skills/${String(s._id)}`}>
+                <Link className="btn btn-secondary" href={`/skills/${String(s._id)}`}>
                   Otwórz
                 </Link>
               </div>

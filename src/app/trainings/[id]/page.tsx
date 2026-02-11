@@ -54,8 +54,8 @@ export default function TrainingDetail() {
         return;
       }
 
-      const data = await trainingRes.json();
-      setTraining(data);
+      const trainingData = await trainingRes.json();
+      setTraining(trainingData);
       setLoadError(null);
 
       if (playersRes.ok) {
@@ -82,8 +82,8 @@ export default function TrainingDetail() {
       }
 
       const prepared: ReportRow[] = [];
-      for (const playerId of data.players ?? []) {
-        for (const entry of data.entries ?? []) {
+      for (const playerId of trainingData.players ?? []) {
+        for (const entry of trainingData.entries ?? []) {
           prepared.push({
             playerId,
             skillId: entry.skillId,
@@ -99,8 +99,8 @@ export default function TrainingDetail() {
     load();
   }, [id]);
 
-  function setReport(i: number, key: keyof ReportRow, value: string | boolean | undefined) {
-    setReports((prev) => prev.map((row, idx) => (idx === i ? { ...row, [key]: value } : row)));
+  function setReport(i: number, patch: Partial<ReportRow>) {
+    setReports((prev) => prev.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
   }
 
   function playerLabel(playerId: string) {
@@ -112,21 +112,21 @@ export default function TrainingDetail() {
   }
 
   function detailLabel(detailId?: string) {
-    if (!detailId) return null;
+    if (!detailId) return "-";
     return detailsById[detailId] ?? `ID: ${detailId}`;
   }
 
   async function submit() {
     if (!training || !id) return;
-
     setLoading(true);
+
     const res = await fetch(`/api/trainings/${id}/report`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reports }),
     });
-    setLoading(false);
 
+    setLoading(false);
     if (!res.ok) {
       alert("Nie udalo sie wyslac raportu.");
       return;
@@ -138,42 +138,87 @@ export default function TrainingDetail() {
 
   if (missingId) return <div className="text-sm text-red-600">Brak identyfikatora treningu.</div>;
   if (loadError) return <div className="text-sm text-red-600">{loadError}</div>;
-  if (!training) return <div>Ladowanie...</div>;
+  if (!training) return <div className="text-sm text-slate-600">Ladowanie...</div>;
 
   const playerNames = (training.players ?? []).map((playerId) => playerLabel(playerId)).join(", ");
 
   return (
-    <div className="max-w-3xl space-y-4">
-      <h1 className="text-2xl font-semibold">Szczegoly treningu</h1>
-
-      <div className="rounded border bg-white p-4">
-        <div className="text-sm">Data: {new Date(training.date).toLocaleDateString("pl-PL")}</div>
-        <div className="text-sm">Zawodnicy: {playerNames || "-"}</div>
-        <div className="text-sm">Elementow: {(training.entries || []).length}</div>
+    <div className="page-wrap max-w-5xl">
+      <div className="hero-card">
+        <h1 className="page-title">Raport treningu</h1>
+        <p className="page-subtitle">Szybka ocena postepu kazdego zawodnika dla kazdego elementu treningowego.</p>
       </div>
 
-      <div className="rounded border bg-white p-4">
-        <div className="font-medium">Raport - zaznacz czy zawodnik sie nauczyl</div>
-        <div className="mt-3 grid gap-3">
+      <div className="surface p-5">
+        <div className="grid gap-2 text-sm md:grid-cols-3">
+          <div>
+            <div className="text-slate-500">Data</div>
+            <div className="font-medium">{new Date(training.date).toLocaleDateString("pl-PL")}</div>
+          </div>
+          <div className="md:col-span-2">
+            <div className="text-slate-500">Zawodnicy</div>
+            <div className="font-medium">{playerNames || "-"}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="surface p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="section-title">Ocena elementow</h2>
+            <p className="section-copy">Zmien status i dodaj notatke tam, gdzie potrzeba.</p>
+          </div>
+          <span className="pill">{reports.length} pozycji</span>
+        </div>
+
+        <div className="grid gap-3">
           {reports.map((row, i) => (
-            <div key={i} className="rounded border p-3">
+            <div key={i} className="surface-muted p-3">
               <div className="grid gap-1 text-sm md:grid-cols-3">
-                <div>Zawodnik: <span className="font-medium">{playerLabel(row.playerId)}</span></div>
-                <div>Umiejetnosc: <span className="font-medium">{skillLabel(row.skillId)}</span></div>
-                <div>Podumiejetnosc: <span className="font-medium">{detailLabel(row.detailId) ?? "-"}</span></div>
+                <div>
+                  <div className="text-slate-500">Zawodnik</div>
+                  <div className="font-medium">{playerLabel(row.playerId)}</div>
+                </div>
+                <div>
+                  <div className="text-slate-500">Umiejetnosc</div>
+                  <div className="font-medium">{skillLabel(row.skillId)}</div>
+                </div>
+                <div>
+                  <div className="text-slate-500">Podumiejetnosc</div>
+                  <div className="font-medium">{detailLabel(row.detailId)}</div>
+                </div>
               </div>
-              <div className="mt-3 flex items-center gap-3">
-              <label className="text-sm">
-                <input type="checkbox" checked={row.learned} onChange={(e) => setReport(i, "learned", e.target.checked)} /> Nauczony
-              </label>
-              <input className="ml-auto rounded border px-2 py-1" placeholder="Notatka" value={row.notes} onChange={(e) => setReport(i, "notes", e.target.value)} />
+
+              <div className="mt-3 grid gap-2 md:grid-cols-[220px_1fr]">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    className={row.learned ? "btn btn-primary" : "btn btn-secondary"}
+                    onClick={() => setReport(i, { learned: true })}
+                  >
+                    Opanowane
+                  </button>
+                  <button
+                    type="button"
+                    className={!row.learned ? "btn btn-primary" : "btn btn-secondary"}
+                    onClick={() => setReport(i, { learned: false })}
+                  >
+                    Do poprawy
+                  </button>
+                </div>
+                <input
+                  className="field-input"
+                  placeholder="Notatka trenerska..."
+                  value={row.notes}
+                  onChange={(e) => setReport(i, { notes: e.target.value })}
+                />
               </div>
             </div>
           ))}
         </div>
 
-        <div className="mt-4">
-          <button disabled={loading} onClick={submit} className="rounded bg-black px-3 py-2 text-white">
+        <div className="mt-4 flex justify-end">
+          <button disabled={loading} onClick={submit} className="btn btn-primary">
             {loading ? "Wysylanie..." : "Wyslij raport"}
           </button>
         </div>

@@ -30,39 +30,42 @@ export default async function TrainingsPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Treningi</h1>
-          <div className="text-sm text-gray-700 mt-1">Zestawienie wszystkich zarejestrowanych treningów</div>
-        </div>
+    <div className="page-wrap">
+      <div className="hero-card">
+        <h1 className="page-title">Treningi</h1>
+        <p className="page-subtitle">Pelna historia jednostek treningowych i szybki dostep do raportow.</p>
+      </div>
 
-        <Link className="rounded bg-black px-3 py-2 text-white text-sm" href="/trainings/new">
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-slate-600">Zestawienie wszystkich zarejestrowanych treningow</div>
+        <Link className="btn btn-primary" href="/trainings/new">
           Dodaj trening
         </Link>
       </div>
 
-      <div className="rounded border bg-white overflow-hidden">
-        <div className="grid grid-cols-12 gap-2 border-b p-3 text-sm font-medium bg-gray-50">
+      <div className="table-wrap">
+        <div className="table-head grid grid-cols-12 gap-2 p-3 text-sm font-semibold text-slate-700">
           <div className="col-span-3">Data</div>
-          <div className="col-span-4">Zawodnik</div>
+          <div className="col-span-4">Zawodnicy</div>
           <div className="col-span-2">Czas (min)</div>
           <div className="col-span-3">Elementy</div>
         </div>
 
         {trainings.length === 0 ? (
-          <div className="p-3 text-sm">Brak treningów</div>
+          <div className="p-4 text-sm text-slate-600">Brak treningow</div>
         ) : (
           (trainings as any[]).map((t) => (
-            <a key={String(t._id)} href={`/trainings/${String(t._id)}`} className="grid grid-cols-12 gap-2 border-b p-3 text-sm hover:bg-gray-50">
-              <div className="col-span-3">{new Date(t.date).toLocaleDateString("pl-PL")}</div>
+            <a key={String(t._id)} href={`/trainings/${String(t._id)}`} className="table-row grid grid-cols-12 gap-2 p-3 text-sm">
+              <div className="col-span-3 font-medium">{new Date(t.date).toLocaleDateString("pl-PL")}</div>
               <div className="col-span-4">
                 {((t.players ?? []) as string[])
                   .map((pid) => playersMap.get(String(pid)) ?? "Nieznany")
                   .join(", ")}
               </div>
-              <div className="col-span-2">{t.durationMinutes ?? ""}</div>
-              <div className="col-span-3">{t.entries?.length ?? 0}</div>
+              <div className="col-span-2 text-slate-600">{t.durationMinutes ?? "-"}</div>
+              <div className="col-span-3">
+                <span className="pill">{t.entries?.length ?? 0}</span>
+              </div>
             </a>
           ))
         )}

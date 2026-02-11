@@ -2,165 +2,150 @@
 
 import { useEffect, useState } from "react";
 
+type Trainer = { _id: string; name?: string; email?: string };
+
+function calculateAge(value?: string) {
+  if (!value) return null;
+  const now = new Date();
+  const birth = new Date(value);
+  let age = now.getFullYear() - birth.getFullYear();
+  const month = now.getMonth() - birth.getMonth();
+  if (month < 0 || (month === 0 && now.getDate() < birth.getDate())) age--;
+  return age;
+}
+
 export default function EditPlayerPanel({ player, playerId }: { player: any; playerId: string }) {
   const [editing, setEditing] = useState(false);
   const [firstName, setFirstName] = useState(player.firstName || "");
   const [lastName, setLastName] = useState(player.lastName || "");
   const [club, setClub] = useState(player.club || "");
   const [position, setPosition] = useState(player.position || "");
-  const [birthDate, setBirthDate] = useState<string | undefined>(player.birthDate ? String(new Date(player.birthDate).toISOString().slice(0, 10)) : undefined);
-  const [dominantFoot, setDominantFoot] = useState<string | undefined>(player.dominantFoot || undefined);
+  const [birthDate, setBirthDate] = useState<string>(player.birthDate ? String(new Date(player.birthDate).toISOString().slice(0, 10)) : "");
+  const [dominantFoot, setDominantFoot] = useState<string>(player.dominantFoot || "");
   const [trainers, setTrainers] = useState<string[]>((player.trainers || []).map((t: any) => String(t._id || t)));
-  const [allTrainers, setAllTrainers] = useState<any[]>([]);
+  const [allTrainers, setAllTrainers] = useState<Trainer[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedToAdd, setSelectedToAdd] = useState<string>("");
+  const [selectedToAdd, setSelectedToAdd] = useState("");
 
   useEffect(() => {
+    async function fetchTrainers() {
+      const res = await fetch("/api/admin/trainers");
+      if (!res.ok) return;
+      const data = await res.json();
+      setAllTrainers(data || []);
+    }
+
     fetchTrainers();
   }, []);
 
-  async function fetchTrainers() {
-    const res = await fetch("/api/admin/trainers");
-    if (!res.ok) return;
-    const data = await res.json();
-    setAllTrainers(data || []);
-  }
+  async function persist(nextTrainers: string[]) {
+    const payload = {
+      firstName,
+      lastName,
+      club: club || undefined,
+      position: position || undefined,
+      birthDate: birthDate || undefined,
+      dominantFoot: dominantFoot || undefined,
+      trainers: nextTrainers,
+    };
 
-  function calcAge(bd?: string) {
-    if (!bd) return null;
-    const d = new Date(bd);
-    const diff = Date.now() - d.getTime();
-    const ageDt = new Date(diff);
-    return Math.abs(ageDt.getUTCFullYear() - 1970);
+    const res = await fetch(`/api/players/${playerId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setError(data?.error ? JSON.stringify(data.error) : "Nie udalo sie zapisac danych.");
+      return false;
+    }
+
+    return true;
   }
 
   async function save() {
     setLoading(true);
     setError(null);
-    try {
-      const payload: any = {
-        firstName,
-        lastName,
-        club: club || undefined,
-        position: position || undefined,
-        birthDate: birthDate || undefined,
-        dominantFoot: dominantFoot || undefined,
-        trainers,
-      };
-      const res = await fetch(`/api/players/${playerId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => null);
-        setError(d?.error ? JSON.stringify(d.error) : "Błąd zapisu");
-        setLoading(false);
-        return;
-      }
-      setEditing(false);
-      location.reload();
-    } catch (e) {
-      setError("Błąd zapisu");
-    }
+    const ok = await persist(trainers);
     setLoading(false);
+    if (!ok) return;
+    setEditing(false);
+    location.reload();
   }
 
   async function addTrainerById(id: string) {
-    if (!id) return;
-    if (trainers.includes(id)) return;
+    if (!id || trainers.includes(id)) return;
+    const next = [...trainers, id];
     setLoading(true);
-    try {
-      const next = [...trainers, id];
-      const res = await fetch(`/api/players/${playerId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trainers: next }),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => null);
-        setError(d?.error ? JSON.stringify(d.error) : "Błąd przypisywania trenera");
-        setLoading(false);
-        return;
-      }
-      setTrainers(next);
-      setSelectedToAdd("");
-    } catch (e) {
-      setError("Błąd przypisywania trenera");
-    }
+    setError(null);
+    const ok = await persist(next);
     setLoading(false);
+    if (!ok) return;
+    setTrainers(next);
+    setSelectedToAdd("");
   }
 
   async function removeTrainerById(id: string) {
-    if (!id) return;
+    const next = trainers.filter((value) => value !== id);
     setLoading(true);
-    try {
-      const next = trainers.filter((t) => t !== id);
-      const res = await fetch(`/api/players/${playerId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trainers: next }),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => null);
-        setError(d?.error ? JSON.stringify(d.error) : "Błąd usuwania trenera");
-        setLoading(false);
-        return;
-      }
-      setTrainers(next);
-    } catch (e) {
-      setError("Błąd usuwania trenera");
-    }
+    setError(null);
+    const ok = await persist(next);
     setLoading(false);
+    if (!ok) return;
+    setTrainers(next);
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-4">
+    <div className="surface p-5">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-lg font-semibold">Szczegóły zawodnika</div>
-          <div className="text-sm text-gray-600">Edycja podstawowych danych i przypisanie trenerów</div>
+          <h2 className="section-title">Dane zawodnika</h2>
+          <p className="section-copy">Edycja danych i przypisywanie trenerow.</p>
         </div>
-        <div>
-          <button onClick={() => setEditing((v) => !v)} className="rounded border px-3 py-2 text-sm">
-            {editing ? "Anuluj" : "Edytuj"}
-          </button>
-        </div>
+        <button onClick={() => setEditing((value) => !value)} className="btn btn-secondary">
+          {editing ? "Anuluj" : "Edytuj"}
+        </button>
       </div>
 
       {!editing ? (
-        <div className="mt-4 grid gap-1 text-sm text-gray-700">
-          <div>{firstName} {lastName}</div>
-          <div>{club ? `Klub: ${club}` : "Klub: brak"}</div>
-          <div>{position ? `Pozycja: ${position}` : "Pozycja: brak"}</div>
-          <div>{birthDate ? `Data urodzenia: ${new Date(birthDate).toLocaleDateString("pl-PL")} (wiek: ${calcAge(birthDate)})` : "Data urodzenia: brak"}</div>
-          <div>{dominantFoot ? `Lepsza noga: ${dominantFoot === "left" ? "Lewa" : "Prawa"}` : "Lepsza noga: brak"}</div>
-          <div>
-            Trenerzy: {trainers.length ? (
-              <div className="flex flex-wrap gap-2">
-                {trainers.map((id) => {
-                  const t = allTrainers.find((x) => String(x._id) === id);
-                  return (
-                    <span key={id} className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">
-                      <span>{t?.name ?? t?.email ?? id}</span>
-                      <button onClick={() => removeTrainerById(id)} className="text-red-500">×</button>
-                    </span>
-                  );
-                })}
-              </div>
-            ) : (
-              <span className="text-gray-500">Brak</span>
-            )}
+        <div className="mt-4 grid gap-2 text-sm">
+          <div className="font-semibold">{firstName} {lastName}</div>
+          <div>Klub: {(club || "-")}</div>
+          <div>Pozycja: {(position || "-")}</div>
+          <div>Data urodzenia: {birthDate ? `${new Date(birthDate).toLocaleDateString("pl-PL")} (wiek: ${calculateAge(birthDate)})` : "-"}</div>
+          <div>Lepsza noga: {dominantFoot ? (dominantFoot === "left" ? "Lewa" : "Prawa") : "-"}</div>
 
-            <div className="mt-2 flex items-center gap-2">
-              <select value={selectedToAdd} onChange={(e) => setSelectedToAdd(e.target.value)} className="rounded border px-3 py-2 text-sm">
+          <div className="mt-2">
+            <div className="mb-2 text-xs font-semibold text-slate-500">Trenerzy</div>
+            <div className="flex flex-wrap gap-2">
+              {trainers.length === 0 ? <span className="text-slate-500">Brak</span> : null}
+              {trainers.map((id) => {
+                const trainer = allTrainers.find((value) => String(value._id) === id);
+                return (
+                  <span key={id} className="pill">
+                    {trainer?.name ?? trainer?.email ?? id}
+                    <button onClick={() => removeTrainerById(id)} className="ml-2 text-red-600">
+                      x
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+
+            <div className="mt-3 flex items-center gap-2">
+              <select value={selectedToAdd} onChange={(e) => setSelectedToAdd(e.target.value)} className="field-select">
                 <option value="">Wybierz trenera...</option>
-                {allTrainers.map((t) => (
-                  <option key={t._id} value={String(t._id)}>{t.name ?? t.email}</option>
+                {allTrainers.map((trainer) => (
+                  <option key={trainer._id} value={String(trainer._id)}>
+                    {trainer.name ?? trainer.email}
+                  </option>
                 ))}
               </select>
-              <button onClick={() => addTrainerById(selectedToAdd)} disabled={!selectedToAdd} className="rounded border px-3 py-2 text-sm">Dodaj trenera</button>
+              <button onClick={() => addTrainerById(selectedToAdd)} disabled={!selectedToAdd || loading} className="btn btn-secondary">
+                Dodaj
+              </button>
             </div>
           </div>
         </div>
@@ -168,34 +153,34 @@ export default function EditPlayerPanel({ player, playerId }: { player: any; pla
         <div className="mt-4 grid gap-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1">
-              <label className="text-sm">Imię</label>
-              <input className="rounded border px-3 py-2" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+              <label className="field-label">Imie</label>
+              <input className="field-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
             </div>
             <div className="grid gap-1">
-              <label className="text-sm">Nazwisko</label>
-              <input className="rounded border px-3 py-2" value={lastName} onChange={(e) => setLastName(e.target.value)} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-1">
-              <label className="text-sm">Klub</label>
-              <input className="rounded border px-3 py-2" value={club} onChange={(e) => setClub(e.target.value)} />
-            </div>
-            <div className="grid gap-1">
-              <label className="text-sm">Pozycja</label>
-              <input className="rounded border px-3 py-2" value={position} onChange={(e) => setPosition(e.target.value)} />
+              <label className="field-label">Nazwisko</label>
+              <input className="field-input" value={lastName} onChange={(e) => setLastName(e.target.value)} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1">
-              <label className="text-sm">Data urodzenia</label>
-              <input type="date" className="rounded border px-3 py-2" value={birthDate || ""} onChange={(e) => setBirthDate(e.target.value)} />
+              <label className="field-label">Klub</label>
+              <input className="field-input" value={club} onChange={(e) => setClub(e.target.value)} />
             </div>
             <div className="grid gap-1">
-              <label className="text-sm">Lepsza noga</label>
-              <select className="rounded border px-3 py-2" value={dominantFoot || ""} onChange={(e) => setDominantFoot(e.target.value || undefined)}>
+              <label className="field-label">Pozycja</label>
+              <input className="field-input" value={position} onChange={(e) => setPosition(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1">
+              <label className="field-label">Data urodzenia</label>
+              <input type="date" className="field-input" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+            </div>
+            <div className="grid gap-1">
+              <label className="field-label">Lepsza noga</label>
+              <select className="field-select" value={dominantFoot} onChange={(e) => setDominantFoot(e.target.value)}>
                 <option value="">Wybierz</option>
                 <option value="left">Lewa</option>
                 <option value="right">Prawa</option>
@@ -204,11 +189,16 @@ export default function EditPlayerPanel({ player, playerId }: { player: any; pla
           </div>
 
           <div className="grid gap-1">
-            <label className="text-sm">Przypisz trenerów (wielokrotny wybór)</label>
-            <select multiple className="rounded border px-3 py-2 h-32" value={trainers} onChange={(e) => setTrainers(Array.from(e.target.selectedOptions, (o) => o.value))}>
-              {allTrainers.map((t) => (
-                <option key={t._id} value={String(t._id)}>
-                  {t.name ?? t.email}
+            <label className="field-label">Trenerzy (wielokrotny wybor)</label>
+            <select
+              multiple
+              className="field-select h-32"
+              value={trainers}
+              onChange={(e) => setTrainers(Array.from(e.target.selectedOptions, (option) => option.value))}
+            >
+              {allTrainers.map((trainer) => (
+                <option key={trainer._id} value={String(trainer._id)}>
+                  {trainer.name ?? trainer.email}
                 </option>
               ))}
             </select>
@@ -217,10 +207,12 @@ export default function EditPlayerPanel({ player, playerId }: { player: any; pla
           {error ? <div className="text-sm text-red-600">{error}</div> : null}
 
           <div className="flex gap-2">
-            <button onClick={save} disabled={loading} className="rounded bg-black px-3 py-2 text-white text-sm">
-              {loading ? "Zapis..." : "Zapisz"}
+            <button onClick={save} disabled={loading} className="btn btn-primary">
+              {loading ? "Zapisywanie..." : "Zapisz"}
             </button>
-            <button onClick={() => setEditing(false)} className="rounded border px-3 py-2 text-sm">Anuluj</button>
+            <button onClick={() => setEditing(false)} className="btn btn-secondary">
+              Anuluj
+            </button>
           </div>
         </div>
       )}

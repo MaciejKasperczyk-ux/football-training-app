@@ -140,7 +140,7 @@ export default function NewTrainingPage() {
             <label className="text-sm">RPE 1 to 10</label>
             <input className="rounded border px-3 py-2" value={rpe} onChange={(e) => setRpe(e.target.value)} inputMode="numeric" />
           </div>
-        </div>
+
 
         <div className="grid gap-1">
           <label className="text-sm">Assigned trainer</label>

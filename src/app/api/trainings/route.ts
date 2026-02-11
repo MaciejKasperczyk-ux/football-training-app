@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   const playerId = searchParams.get("playerId");
 
   const filter: Record<string, unknown> = {};
-  if (playerId) filter.playerId = playerId;
+  if (playerId) filter.players = playerId;
 
   const docs = await TrainingSession.find(filter).sort({ date: -1 });
   return NextResponse.json(docs);
@@ -34,6 +34,7 @@ export async function POST(req: Request) {
 
   const created = await TrainingSession.create({
     ...payload,
+    // ensure date is stored as Date
     date: new Date(payload.date),
   });
 

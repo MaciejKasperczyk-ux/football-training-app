@@ -14,7 +14,10 @@ const TrainingEntrySchema = new Schema(
 
 const TrainingSessionSchema = new Schema(
   {
-    playerId: { type: Schema.Types.ObjectId, ref: "Player", required: true },
+    // support group trainings: one session can have multiple players
+    players: { type: [Schema.Types.ObjectId], ref: "Player", required: true },
+    // optional assigned trainer
+    trainerId: { type: Schema.Types.ObjectId, ref: "User", required: false },
     date: { type: Date, required: true },
     durationMinutes: { type: Number, required: false },
     location: { type: String, required: false },

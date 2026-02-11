@@ -29,7 +29,9 @@ export const skillSchema = z.object({
 });
 
 export const trainingSchema = z.object({
-  playerId: z.string().min(1),
+  // one or more player ids for group trainings
+  players: z.array(z.string().min(1)).min(1),
+  trainerId: z.string().optional(),
   date: z.string().min(1),
   durationMinutes: z.number().int().positive().optional(),
   location: z.string().optional(),

@@ -54,12 +54,16 @@ export default async function TrainingsPage() {
           <div className="p-3 text-sm">Brak treningów</div>
         ) : (
           (trainings as any[]).map((t) => (
-            <div key={String(t._id)} className="grid grid-cols-12 gap-2 border-b p-3 text-sm">
+            <a key={String(t._id)} href={`/trainings/${String(t._id)}`} className="grid grid-cols-12 gap-2 border-b p-3 text-sm hover:bg-gray-50">
               <div className="col-span-3">{new Date(t.date).toLocaleDateString("pl-PL")}</div>
-              <div className="col-span-4">{playersMap.get(String(t.playerId)) ?? "Nieznany zawodnik"}</div>
+              <div className="col-span-4">
+                {((t.players ?? []) as string[])
+                  .map((pid) => playersMap.get(String(pid)) ?? "Nieznany")
+                  .join(", ")}
+              </div>
               <div className="col-span-2">{t.durationMinutes ?? ""}</div>
               <div className="col-span-3">{t.entries?.length ?? 0}</div>
-            </div>
+            </a>
           ))
         )}
       </div>

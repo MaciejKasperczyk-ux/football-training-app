@@ -24,8 +24,9 @@ export default function NewTrainingPage() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [playerId, setPlayerId] = useState(prePlayerId);
+  const [selectedPlayers, setSelectedPlayers] = useState<string[]>(prePlayerId ? [prePlayerId] : []);
+  const [trainers, setTrainers] = useState<{ _id: string; name?: string; email?: string }[]>([]);
+  const [trainerId, setTrainerId] = useState("");
   const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [durationMinutes, setDurationMinutes] = useState<string>("");
   const [goal, setGoal] = useState<string>("");
@@ -35,11 +36,13 @@ export default function NewTrainingPage() {
 
   useEffect(() => {
     async function load() {
-      const [pRes, sRes] = await Promise.all([fetch("/api/players"), fetch("/api/skills")]);
+      const [pRes, sRes, trRes] = await Promise.all([fetch("/api/players"), fetch("/api/skills"), fetch("/api/admin/trainers")]);
       const p = await pRes.json();
       const s = await sRes.json();
+      const tr = await trRes.json().catch(() => []);
       setPlayers(p);
       setSkills(s);
+      setTrainers(tr);
     }
     load();
   }, []);
@@ -71,7 +74,8 @@ export default function NewTrainingPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        playerId,
+        players: selectedPlayers,
+        trainerId: trainerId || undefined,
         date,
         durationMinutes: durationMinutes ? Number(durationMinutes) : undefined,
         goal: goal || undefined,
@@ -88,7 +92,7 @@ export default function NewTrainingPage() {
       return;
     }
 
-    router.push(playerId ? `/players/${playerId}` : "/trainings");
+    router.push(selectedPlayers.length === 1 ? `/players/${selectedPlayers[0]}` : "/trainings");
     router.refresh();
   }
 
@@ -102,11 +106,18 @@ export default function NewTrainingPage() {
       <h1 className="text-2xl font-semibold">Add training</h1>
 
       <form onSubmit={onSubmit} className="rounded border bg-white p-4 space-y-4">
-        <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1">
-            <label className="text-sm">Player</label>
-            <select className="rounded border px-3 py-2" value={playerId} onChange={(e) => setPlayerId(e.target.value)}>
-              <option value="">Select</option>
+            <label className="text-sm">Players (hold Ctrl/Cmd to select multiple)</label>
+            <select
+              multiple
+              className="rounded border px-3 py-2"
+              value={selectedPlayers}
+              onChange={(e) => {
+                const opts = Array.from(e.currentTarget.options);
+                const vals = opts.filter((o) => o.selected).map((o) => o.value);
+                setSelectedPlayers(vals);
+              }}
+            >
               {players.map((p) => (
                 <option key={p._id} value={p._id}>
                   {p.firstName} {p.lastName}
@@ -129,6 +140,16 @@ export default function NewTrainingPage() {
             <label className="text-sm">RPE 1 to 10</label>
             <input className="rounded border px-3 py-2" value={rpe} onChange={(e) => setRpe(e.target.value)} inputMode="numeric" />
           </div>
+        </div>
+
+        <div className="grid gap-1">
+          <label className="text-sm">Assigned trainer</label>
+          <select className="rounded border px-3 py-2" value={trainerId} onChange={(e) => setTrainerId(e.target.value)}>
+            <option value="">(brak)</option>
+            {trainers.map((t) => (
+              <option key={t._id} value={t._id}>{t.name ?? t.email}</option>
+            ))}
+          </select>
         </div>
 
         <div className="grid gap-1">

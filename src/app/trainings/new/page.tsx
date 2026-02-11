@@ -28,10 +28,6 @@ export default function NewTrainingPage() {
   const [trainers, setTrainers] = useState<{ _id: string; name?: string; email?: string }[]>([]);
   const [trainerId, setTrainerId] = useState("");
   const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [durationMinutes, setDurationMinutes] = useState<string>("");
-  const [goal, setGoal] = useState<string>("");
-  const [rpe, setRpe] = useState<string>("");
-  const [notes, setNotes] = useState<string>("");
   const [entries, setEntries] = useState<Entry[]>([{ skillId: "" }]);
 
   useEffect(() => {
@@ -60,29 +56,12 @@ export default function NewTrainingPage() {
     setLoading(true);
     setError(null);
 
-    const cleanEntries = entries
-      .filter((e) => e.skillId)
-      .map((e) => ({
-        skillId: e.skillId,
-        detailId: e.detailId || undefined,
-        volume: e.volume ? Number(e.volume) : undefined,
-        quality: e.quality ? Number(e.quality) : undefined,
-        notes: e.notes || undefined,
-      }));
+    const cleanEntries = entries.filter((e) => e.skillId).map((e) => ({ skillId: e.skillId, detailId: e.detailId || undefined, notes: e.notes || undefined }));
 
     const res = await fetch("/api/trainings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        players: selectedPlayers,
-        trainerId: trainerId || undefined,
-        date,
-        durationMinutes: durationMinutes ? Number(durationMinutes) : undefined,
-        goal: goal || undefined,
-        rpe: rpe ? Number(rpe) : undefined,
-        notes: notes || undefined,
-        entries: cleanEntries.length ? cleanEntries : undefined,
-      }),
+      body: JSON.stringify({ players: selectedPlayers, trainerId: trainerId || undefined, date, entries: cleanEntries.length ? cleanEntries : undefined }),
     });
 
     if (!res.ok) {
@@ -99,6 +78,10 @@ export default function NewTrainingPage() {
   function getDetails(skillIdValue: string) {
     const skill = skills.find((s) => s._id === skillIdValue);
     return skill?.details ?? [];
+  }
+
+  function getSkillName(id: string) {
+    return skills.find((s) => s._id === id)?.name ?? "";
   }
 
   return (
@@ -131,17 +114,6 @@ export default function NewTrainingPage() {
             <input className="rounded border px-3 py-2" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
 
-          <div className="grid gap-1">
-            <label className="text-sm">Czas (min) (opcjonalne)</label>
-            <input className="rounded border px-3 py-2" value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value)} inputMode="numeric" />
-          </div>
-
-          <div className="grid gap-1">
-            <label className="text-sm">RPE (1-10, opcjonalne)</label>
-            <input className="rounded border px-3 py-2" value={rpe} onChange={(e) => setRpe(e.target.value)} inputMode="numeric" />
-          </div>
-
-
         <div className="grid gap-1">
           <label className="text-sm">Przypisany trener (opcjonalne)</label>
           <select className="rounded border px-3 py-2" value={trainerId} onChange={(e) => setTrainerId(e.target.value)}>
@@ -151,16 +123,7 @@ export default function NewTrainingPage() {
             ))}
           </select>
         </div>
-
-        <div className="grid gap-1">
-          <label className="text-sm">Cel (opcjonalne)</label>
-          <input className="rounded border px-3 py-2" value={goal} onChange={(e) => setGoal(e.target.value)} />
-        </div>
-
-        <div className="grid gap-1">
-          <label className="text-sm">Notatki (opcjonalne)</label>
-          <input className="rounded border px-3 py-2" value={notes} onChange={(e) => setNotes(e.target.value)} />
-        </div>
+        
 
         <div className="space-y-2">
           <div className="font-medium text-sm">Elementy</div>
@@ -170,12 +133,21 @@ export default function NewTrainingPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1">
                   <label className="text-sm">Umiejętność</label>
-                  <select className="rounded border px-3 py-2" value={en.skillId} onChange={(e) => setEntry(i, "skillId", e.target.value)}>
-                    <option value="">Wybierz</option>
+                  <input
+                    list={`skills-list-${i}`}
+                    className="rounded border px-3 py-2"
+                    value={getSkillName(en.skillId)}
+                    onChange={(e) => {
+                      const name = e.target.value;
+                      const found = skills.find((s) => s.name === name);
+                      setEntry(i, "skillId", found ? found._id : "");
+                    }}
+                  />
+                  <datalist id={`skills-list-${i}`}>
                     {skills.map((s) => (
-                      <option key={s._id} value={s._id}>{s.name}{s.details && s.details.length ? ` — ${s.details.map((d:any)=>d.name).join(", ")}` : ""}</option>
+                      <option key={s._id} value={s.name} />
                     ))}
-                  </select>
+                  </datalist>
                 </div>
 
                 <div className="grid gap-1">
@@ -193,15 +165,7 @@ export default function NewTrainingPage() {
                   </select>
                 </div>
 
-                <div className="grid gap-1">
-                  <label className="text-sm">Ilość</label>
-                  <input className="rounded border px-3 py-2" value={en.volume ?? ""} onChange={(e) => setEntry(i, "volume", e.target.value)} inputMode="numeric" />
-                </div>
-
-                <div className="grid gap-1">
-                  <label className="text-sm">Jakość (1-5)</label>
-                  <input className="rounded border px-3 py-2" value={en.quality ?? ""} onChange={(e) => setEntry(i, "quality", e.target.value)} inputMode="numeric" />
-                </div>
+                {/* ilość i jakość usunięte — upraszczamy UI */}
               </div>
 
               <div className="grid gap-1">

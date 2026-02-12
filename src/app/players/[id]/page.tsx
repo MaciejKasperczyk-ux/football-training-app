@@ -10,8 +10,29 @@ import DeletePlayerButton from "@/components/players/DeletePlayerButton";
 import EditPlayerPanel from "@/components/players/EditPlayerPanel";
 import PlayerSkillsManager from "@/components/players/PlayerSkillsManager";
 import PlayerGoals from "@/components/players/PlayerGoals";
+import PlayerSkillsRadar from "@/components/players/PlayerSkillsRadar";
 
 type PageProps = { params: Promise<{ id: string }> };
+type SkillItem = { _id: unknown; name: string; details?: unknown[] };
+type PlayerSkillItem = { skillId: unknown; detailId?: unknown | null; status?: string };
+type PlayerProfile = {
+  _id: unknown;
+  firstName: string;
+  lastName: string;
+  birthDate?: Date | string | null;
+  age?: number | null;
+  club?: string | null;
+  position?: string | null;
+  dominantFoot?: string | null;
+};
+type TrainingItem = {
+  _id: unknown;
+  date: Date | string;
+  durationMinutes?: number | null;
+  goal?: string | null;
+  notes?: string | null;
+  entries?: unknown[];
+};
 
 function ageFromBirthDate(birthDate?: Date | string | null) {
   if (!birthDate) return null;
@@ -56,12 +77,42 @@ export default async function PlayerPage({ params }: PageProps) {
   const trainings = await TrainingSession.find({ players: player._id }).sort({ date: -1 }).lean();
   const skills = await Skill.find().lean();
   const playerSkills = await PlayerSkill.find({ playerId: player._id }).lean();
-  const playerSkillsMap = new Map<string, string>();
-  for (const ps of playerSkills as any[]) {
-    playerSkillsMap.set(String(ps.skillId), String(ps.status));
+  const playerProfile = player as PlayerProfile;
+  const completedDetailBySkill = new Map<string, Set<string>>();
+
+  for (const ps of playerSkills as PlayerSkillItem[]) {
+    if (ps.status !== "zrobione") continue;
+
+    const skillId = String(ps.skillId);
+    const detailKey = ps.detailId ? String(ps.detailId) : "__main__";
+    if (!completedDetailBySkill.has(skillId)) completedDetailBySkill.set(skillId, new Set<string>());
+    completedDetailBySkill.get(skillId)?.add(detailKey);
   }
 
-  const age = ageFromBirthDate((player as any).birthDate) ?? (player as any).age ?? null;
+  const age = ageFromBirthDate(playerProfile.birthDate) ?? playerProfile.age ?? null;
+  const skillProgress = (skills as SkillItem[]).map((skill) => {
+    const skillId = String(skill._id);
+    const detailIds = (skill.details ?? []).map((detailId) => String(detailId));
+    const doneSet = completedDetailBySkill.get(skillId) ?? new Set<string>();
+
+    const total = detailIds.length > 0 ? detailIds.length : 1;
+    const done =
+      detailIds.length > 0
+        ? detailIds.filter((detailId) => doneSet.has(detailId)).length
+        : doneSet.has("__main__")
+          ? 1
+          : 0;
+
+    const ratio = total > 0 ? done / total : 0;
+    return {
+      id: skillId,
+      name: skill.name,
+      done,
+      total,
+      ratio,
+      score: ratio * 5,
+    };
+  });
 
   return (
     <div className="page-wrap">
@@ -75,16 +126,16 @@ export default async function PlayerPage({ params }: PageProps) {
             <Link className="btn btn-secondary" href="/players">
               Wroc do listy
             </Link>
-            <DeletePlayerButton playerId={String(player._id)} />
+            <DeletePlayerButton playerId={String(playerProfile._id)} />
           </div>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <EditPlayerPanel player={player} playerId={String(player._id)} />
-          <PlayerSkillsManager playerId={String(player._id)} />
-          <PlayerGoals playerId={String(player._id)} />
+          <EditPlayerPanel player={playerProfile} playerId={String(playerProfile._id)} />
+          <PlayerSkillsManager playerId={String(playerProfile._id)} />
+          <PlayerGoals playerId={String(playerProfile._id)} />
 
           <div className="surface p-5">
             <div className="mb-3">
@@ -96,7 +147,7 @@ export default async function PlayerPage({ params }: PageProps) {
               <div className="text-sm text-slate-600">Brak treningow.</div>
             ) : (
               <div className="grid gap-2">
-                {(trainings as any[]).map((training) => (
+                {(trainings as TrainingItem[]).map((training) => (
                   <Link key={String(training._id)} href={`/trainings/${String(training._id)}`} className="surface-muted p-3">
                     <div className="text-sm font-semibold">
                       {new Date(training.date).toLocaleDateString("pl-PL")}
@@ -113,23 +164,28 @@ export default async function PlayerPage({ params }: PageProps) {
         </div>
 
         <div className="space-y-4">
+          <PlayerSkillsRadar data={skillProgress} />
+
           <div className="surface p-5">
             <h2 className="section-title">Podsumowanie</h2>
             <div className="mt-3 grid gap-2 text-sm">
-              <div>Klub: <span className="font-medium">{(player as any).club || "-"}</span></div>
-              <div>Pozycja: <span className="font-medium">{(player as any).position || "-"}</span></div>
+              <div>Klub: <span className="font-medium">{playerProfile.club || "-"}</span></div>
+              <div>Pozycja: <span className="font-medium">{playerProfile.position || "-"}</span></div>
               <div>Wiek: <span className="font-medium">{age ?? "-"}</span></div>
-              <div>Lepsza noga: <span className="font-medium">{(player as any).dominantFoot || "-"}</span></div>
+              <div>Lepsza noga: <span className="font-medium">{playerProfile.dominantFoot || "-"}</span></div>
             </div>
           </div>
 
           <div className="surface p-5">
             <h2 className="section-title">Glowne umiejetnosci</h2>
             <div className="mt-3 grid gap-2">
-              {(skills as any[]).map((skill) => (
-                <div key={String(skill._id)} className="surface-muted flex items-center justify-between px-3 py-2 text-sm">
-                  <span>{String(skill.name)}</span>
-                  <span className="pill">{playerSkillsMap.get(String(skill._id)) ?? "nie opanowana"}</span>
+              {skillProgress.map((skill) => (
+                <div key={skill.id} className="surface-muted flex items-center justify-between px-3 py-2 text-sm">
+                  <span>{skill.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="pill">{skill.done}/{skill.total}</span>
+                    <span className="pill">{Math.round(skill.ratio * 100)}%</span>
+                  </div>
                 </div>
               ))}
             </div>

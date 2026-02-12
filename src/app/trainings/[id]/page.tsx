@@ -141,9 +141,15 @@ export default function TrainingDetail() {
   if (!training) return <div className="text-sm text-slate-600">Ladowanie...</div>;
 
   const playerNames = (training.players ?? []).map((playerId) => playerLabel(playerId)).join(", ");
+  const reportsByPlayer = (training.players ?? []).map((playerId) => ({
+    playerId,
+    items: reports
+      .map((row, idx) => ({ ...row, idx }))
+      .filter((row) => row.playerId === playerId),
+  }));
 
   return (
-    <div className="page-wrap max-w-5xl">
+    <div className="page-wrap">
       <div className="hero-card">
         <h1 className="page-title">Raport treningu</h1>
         <p className="page-subtitle">Szybka ocena postepu kazdego zawodnika dla kazdego elementu treningowego.</p>
@@ -166,52 +172,58 @@ export default function TrainingDetail() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="section-title">Ocena elementow</h2>
-            <p className="section-copy">Zmien status i dodaj notatke tam, gdzie potrzeba.</p>
+            <p className="section-copy">Krotki raport po treningu, podzielony na zawodnikow i elementy.</p>
           </div>
           <span className="pill">{reports.length} pozycji</span>
         </div>
 
-        <div className="grid gap-3">
-          {reports.map((row, i) => (
-            <div key={i} className="surface-muted p-3">
-              <div className="grid gap-1 text-sm md:grid-cols-3">
-                <div>
-                  <div className="text-slate-500">Zawodnik</div>
-                  <div className="font-medium">{playerLabel(row.playerId)}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Umiejetnosc</div>
-                  <div className="font-medium">{skillLabel(row.skillId)}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500">Podumiejetnosc</div>
-                  <div className="font-medium">{detailLabel(row.detailId)}</div>
-                </div>
+        <div className="grid gap-4">
+          {reportsByPlayer.map((group) => (
+            <div key={group.playerId} className="surface-muted p-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-slate-900">{playerLabel(group.playerId)}</h3>
+                <span className="pill">{group.items.length} elementow</span>
               </div>
 
-              <div className="mt-3 grid gap-2 md:grid-cols-[220px_1fr]">
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    className={row.learned ? "btn btn-primary" : "btn btn-secondary"}
-                    onClick={() => setReport(i, { learned: true })}
-                  >
-                    Opanowane
-                  </button>
-                  <button
-                    type="button"
-                    className={!row.learned ? "btn btn-primary" : "btn btn-secondary"}
-                    onClick={() => setReport(i, { learned: false })}
-                  >
-                    Do poprawy
-                  </button>
-                </div>
-                <input
-                  className="field-input"
-                  placeholder="Notatka trenerska..."
-                  value={row.notes}
-                  onChange={(e) => setReport(i, { notes: e.target.value })}
-                />
+              <div className="grid gap-3">
+                {group.items.map((row) => (
+                  <div key={row.idx} className="rounded-xl border border-slate-200 bg-white p-3">
+                    <div className="grid gap-1 text-sm md:grid-cols-2">
+                      <div>
+                        <div className="text-slate-500">Umiejetnosc</div>
+                        <div className="font-medium">{skillLabel(row.skillId)}</div>
+                      </div>
+                      <div>
+                        <div className="text-slate-500">Podumiejetnosc</div>
+                        <div className="font-medium">{detailLabel(row.detailId)}</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        className={row.learned ? "btn btn-primary" : "btn btn-secondary"}
+                        onClick={() => setReport(row.idx, { learned: true })}
+                      >
+                        Opanowane
+                      </button>
+                      <button
+                        type="button"
+                        className={!row.learned ? "btn btn-primary" : "btn btn-secondary"}
+                        onClick={() => setReport(row.idx, { learned: false })}
+                      >
+                        Do poprawy
+                      </button>
+                    </div>
+
+                    <input
+                      className="field-input mt-3"
+                      placeholder="Notatka trenerska..."
+                      value={row.notes}
+                      onChange={(e) => setReport(row.idx, { notes: e.target.value })}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           ))}

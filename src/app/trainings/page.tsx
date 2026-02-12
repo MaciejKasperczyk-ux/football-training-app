@@ -5,6 +5,20 @@ import { Player } from "@/models/Player";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 
+type TrainingListItem = {
+  _id: string;
+  date: Date | string;
+  players?: string[];
+  durationMinutes?: number | null;
+  entries?: Array<unknown>;
+};
+
+type PlayerListItem = {
+  _id: string;
+  firstName: string;
+  lastName: string;
+};
+
 export default async function TrainingsPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -25,7 +39,7 @@ export default async function TrainingsPage() {
   const players = await Player.find().lean();
 
   const playersMap = new Map<string, string>();
-  for (const p of players as any[]) {
+  for (const p of players as PlayerListItem[]) {
     playersMap.set(String(p._id), `${p.firstName} ${p.lastName}`);
   }
 
@@ -43,33 +57,46 @@ export default async function TrainingsPage() {
         </Link>
       </div>
 
-      <div className="table-wrap">
-        <div className="table-head grid grid-cols-12 gap-2 p-3 text-sm font-semibold text-slate-700">
-          <div className="col-span-3">Data</div>
-          <div className="col-span-4">Zawodnicy</div>
-          <div className="col-span-2">Czas (min)</div>
-          <div className="col-span-3">Elementy</div>
-        </div>
+      {trainings.length === 0 ? (
+        <div className="surface p-4 text-sm text-slate-600">Brak treningow</div>
+      ) : (
+        <div className="grid gap-3">
+          {(trainings as TrainingListItem[]).map((t) => {
+            const trainingPlayers = ((t.players ?? []) as string[]).map((pid) => playersMap.get(String(pid)) ?? "Nieznany");
+            return (
+              <Link
+                key={String(t._id)}
+                href={`/trainings/${String(t._id)}`}
+                className="surface w-full p-4 transition hover:-translate-y-0.5 hover:shadow-lg"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <div className="text-sm text-slate-500">Data treningu</div>
+                    <div className="text-base font-semibold">{new Date(t.date).toLocaleDateString("pl-PL")}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="pill">{t.entries?.length ?? 0} elementow</span>
+                    <span className="pill">{t.durationMinutes ? `${t.durationMinutes} min` : "bez czasu"}</span>
+                  </div>
+                </div>
 
-        {trainings.length === 0 ? (
-          <div className="p-4 text-sm text-slate-600">Brak treningow</div>
-        ) : (
-          (trainings as any[]).map((t) => (
-            <a key={String(t._id)} href={`/trainings/${String(t._id)}`} className="table-row grid grid-cols-12 gap-2 p-3 text-sm">
-              <div className="col-span-3 font-medium">{new Date(t.date).toLocaleDateString("pl-PL")}</div>
-              <div className="col-span-4">
-                {((t.players ?? []) as string[])
-                  .map((pid) => playersMap.get(String(pid)) ?? "Nieznany")
-                  .join(", ")}
-              </div>
-              <div className="col-span-2 text-slate-600">{t.durationMinutes ?? "-"}</div>
-              <div className="col-span-3">
-                <span className="pill">{t.entries?.length ?? 0}</span>
-              </div>
-            </a>
-          ))
-        )}
-      </div>
+                <div className="mt-3 text-sm text-slate-500">Zawodnicy</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {trainingPlayers.length === 0 ? (
+                    <span className="text-sm text-slate-600">Brak zawodnikow</span>
+                  ) : (
+                    trainingPlayers.map((name, idx) => (
+                      <span key={`${name}-${idx}`} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                        {name}
+                      </span>
+                    ))
+                  )}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

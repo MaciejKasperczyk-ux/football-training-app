@@ -5,7 +5,7 @@ import { skillSchema } from "@/lib/validators";
 import { requireRoleApi } from "@/lib/auth";
 
 export async function GET() {
-  const auth = await requireRoleApi(["admin", "trainer", "viewer"]);
+  const auth = await requireRoleApi(["admin", "trainer", "viewer", "player"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
 
   await dbConnect();

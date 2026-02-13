@@ -39,12 +39,12 @@ export default function PlayerSkillsManager({ playerId, canManage = true }: { pl
 
   async function loadAll() {
     const sRes = await fetch("/api/skills", { cache: "no-store" });
-    const sData = await sRes.json();
-    setSkills(sData);
+    const sData = await sRes.json().catch(() => []);
+    setSkills(Array.isArray(sData) ? sData : []);
 
     const rRes = await fetch(`/api/player-skills?playerId=${playerId}`, { cache: "no-store" });
-    const rData = await rRes.json();
-    setRows(rData);
+    const rData = await rRes.json().catch(() => []);
+    setRows(Array.isArray(rData) ? rData : []);
   }
 
   useEffect(() => {

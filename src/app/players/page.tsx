@@ -5,6 +5,15 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import DeletePlayerButton from "@/components/players/DeletePlayerButton";
 
+type PlayerListItem = {
+  _id: unknown;
+  firstName?: string;
+  lastName?: string;
+  club?: string | null;
+  position?: string | null;
+  age?: number | null;
+};
+
 export default async function PlayersPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -21,6 +30,10 @@ export default async function PlayersPage() {
 
   await dbConnect();
   const players = await Player.find().sort({ lastName: 1, firstName: 1 }).lean();
+  const playersList = players as PlayerListItem[];
+  const clubCount = new Set(playersList.map((player) => String(player.club ?? "").trim()).filter(Boolean)).size;
+  const knownAges = playersList.map((player) => player.age).filter((age) => typeof age === "number") as number[];
+  const avgAge = knownAges.length ? Math.round(knownAges.reduce((sum, age) => sum + age, 0) / knownAges.length) : null;
 
   return (
     <div className="page-wrap">
@@ -29,43 +42,60 @@ export default async function PlayersPage() {
         <p className="page-subtitle">Baza zawodnikow, profile i szybkie przejscie do planu rozwoju.</p>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-slate-600">Baza zawodnikow i ich profile treningowe</div>
         <Link className="btn btn-primary" href="/players/new">
           Dodaj zawodnika
         </Link>
       </div>
 
-      <div className="table-wrap">
-        <div className="table-head grid grid-cols-12 gap-2 p-3 text-sm font-semibold text-slate-700">
-          <div className="col-span-4">Imię i nazwisko</div>
-          <div className="col-span-3">Klub</div>
-          <div className="col-span-2">Pozycja</div>
-          <div className="col-span-1">Wiek</div>
-          <div className="col-span-2 text-right">Akcje</div>
+      <div className="surface p-3 md:p-4">
+        <div className="entity-stats">
+          <span className="pill">Zawodnicy: {playersList.length}</span>
+          <span className="pill">Kluby: {clubCount}</span>
+          <span className="pill">Sredni wiek: {avgAge ?? "-"}</span>
         </div>
 
-        {players.length === 0 ? (
+        {playersList.length === 0 ? (
           <div className="p-4 text-sm text-slate-600">Brak zawodnikow</div>
         ) : (
-          players.map((p: any) => (
-            <div key={String(p._id)} className="table-row grid grid-cols-12 gap-2 p-3 text-sm items-center">
-              <div className="col-span-4 font-medium">
-                <Link className="text-slate-900 hover:text-sky-700" href={`/players/${String(p._id)}`}>
-                  {p.firstName} {p.lastName}
-                </Link>
-              </div>
-              <div className="col-span-3 text-slate-600">{p.club ?? "-"}</div>
-              <div className="col-span-2 text-slate-600">{p.position ?? "-"}</div>
-              <div className="col-span-1 text-slate-600">{p.age ?? "-"}</div>
-              <div className="col-span-2 flex justify-end gap-2">
-                <Link className="btn btn-secondary" href={`/players/${String(p._id)}`}>
-                  Otwórz
-                </Link>
-                <DeletePlayerButton playerId={String(p._id)} />
-              </div>
-            </div>
-          ))
+          <div className="entity-grid">
+            {playersList.map((player) => (
+              <article key={String(player._id)} className="entity-card">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <Link className="entity-title" href={`/players/${String(player._id)}`}>
+                      {player.firstName} {player.lastName}
+                    </Link>
+                    <p className="entity-subtle">{player.club ?? "Brak klubu"}</p>
+                  </div>
+                  <span className="pill">{player.position ?? "Brak pozycji"}</span>
+                </div>
+
+                <div className="entity-metrics mt-4">
+                  <div>
+                    <div className="entity-label">Wiek</div>
+                    <div className="entity-value">{player.age ?? "-"}</div>
+                  </div>
+                  <div>
+                    <div className="entity-label">Pozycja</div>
+                    <div className="entity-value">{player.position ?? "-"}</div>
+                  </div>
+                  <div>
+                    <div className="entity-label">Klub</div>
+                    <div className="entity-value truncate">{player.club ?? "-"}</div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap justify-end gap-2">
+                  <Link className="btn btn-secondary" href={`/players/${String(player._id)}`}>
+                    Otwórz
+                  </Link>
+                  <DeletePlayerButton playerId={String(player._id)} />
+                </div>
+              </article>
+            ))}
+          </div>
         )}
       </div>
     </div>

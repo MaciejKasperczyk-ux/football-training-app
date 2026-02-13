@@ -30,10 +30,10 @@ body {
 }
 
 .app-shell {
-  max-width: 84rem;
+  max-width: none;
   margin: 0 auto;
   width: 100%;
-  padding: 1.25rem 1rem 2rem;
+  padding: 1.25rem clamp(1rem, 2.2vw, 2rem) 2rem;
 }
 
 .page-wrap {
@@ -213,6 +213,88 @@ body {
   background: #f8fafc;
 }
 
+.entity-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+
+.entity-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.entity-card {
+  border: 1px solid #dbe4f0;
+  border-radius: 0.95rem;
+  padding: 0.95rem;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(14, 165, 233, 0.14), transparent 38%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.entity-card:hover {
+  transform: translateY(-2px);
+  border-color: #bfdbfe;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+}
+
+.entity-title {
+  display: inline-block;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.entity-title:hover {
+  color: #0369a1;
+}
+
+.entity-subtle {
+  margin-top: 0.18rem;
+  font-size: 0.84rem;
+  color: #64748b;
+}
+
+.entity-metrics {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.entity-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.entity-value {
+  margin-top: 0.15rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.entity-meter {
+  height: 0.48rem;
+  border-radius: 999px;
+  background: #dbeafe;
+  overflow: hidden;
+}
+
+.entity-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0ea5e9 0%, #2563eb 100%);
+}
+
 .mobile-bottom-nav {
   position: fixed;
   left: 0;
@@ -250,5 +332,11 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .page-wrap > * {
     animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .entity-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

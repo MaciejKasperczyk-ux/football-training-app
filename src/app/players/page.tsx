@@ -4,6 +4,7 @@ import { Player } from "@/models/Player";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import DeletePlayerButton from "@/components/players/DeletePlayerButton";
+import { redirect } from "next/navigation";
 
 type PlayerListItem = {
   _id: unknown;
@@ -29,6 +30,21 @@ export default async function PlayersPage() {
   }
 
   await dbConnect();
+  const role = (session.user as { role?: string; playerId?: string | null } | undefined)?.role;
+  const ownPlayerId = (session.user as { role?: string; playerId?: string | null } | undefined)?.playerId;
+
+  if (role === "player" && ownPlayerId) {
+    redirect(`/players/${ownPlayerId}`);
+  }
+  if (role === "player" && !ownPlayerId) {
+    return (
+      <div className="surface p-6">
+        <h1 className="page-title">Zawodnicy</h1>
+        <div className="mt-2 text-sm text-slate-600">Konto zawodnika nie jest jeszcze przypisane do profilu.</div>
+      </div>
+    );
+  }
+
   const players = await Player.find().sort({ lastName: 1, firstName: 1 }).lean();
   const playersList = players as PlayerListItem[];
   const clubCount = new Set(playersList.map((player) => String(player.club ?? "").trim()).filter(Boolean)).size;
@@ -44,9 +60,11 @@ export default async function PlayersPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-slate-600">Baza zawodnikow i ich profile treningowe</div>
-        <Link className="btn btn-primary" href="/players/new">
-          Dodaj zawodnika
-        </Link>
+        {role === "admin" || role === "trainer" ? (
+          <Link className="btn btn-primary" href="/players/new">
+            Dodaj zawodnika
+          </Link>
+        ) : null}
       </div>
 
       <div className="surface p-3 md:p-4">
@@ -91,7 +109,7 @@ export default async function PlayersPage() {
                   <Link className="btn btn-secondary" href={`/players/${String(player._id)}`}>
                     Otwórz
                   </Link>
-                  <DeletePlayerButton playerId={String(player._id)} />
+                  {role === "admin" || role === "trainer" ? <DeletePlayerButton playerId={String(player._id)} /> : null}
                 </div>
               </article>
             ))}

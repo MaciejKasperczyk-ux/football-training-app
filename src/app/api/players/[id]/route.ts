@@ -2,14 +2,17 @@ import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { Player } from "@/models/Player";
 import { playerSchema } from "@/lib/validators";
-import { requireRoleApi } from "@/lib/auth";
+import { canAccessPlayer, requireRoleApi } from "@/lib/auth";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_: Request, { params }: Ctx) {
   const { id } = await params;
-  const auth = await requireRoleApi(["admin", "trainer", "viewer"]);
+  const auth = await requireRoleApi(["admin", "trainer", "viewer", "player"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+  if (!canAccessPlayer(auth.session?.user as any, id)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   await dbConnect();
   const doc = await Player.findById(id);

@@ -5,6 +5,7 @@ import { TrainingSession } from "@/models/TrainingSession";
 import { Goal } from "@/models/Goal";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+import { redirect } from "next/navigation";
 
 function startOfToday() {
   const d = new Date();
@@ -32,6 +33,8 @@ function statusLabel(status: string) {
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   const name = session?.user?.name ?? "Użytkownik";
+  const role = (session?.user as { role?: string; playerId?: string | null } | undefined)?.role;
+  const playerId = (session?.user as { role?: string; playerId?: string | null } | undefined)?.playerId;
 
   if (!session?.user) {
     return (
@@ -41,6 +44,20 @@ export default async function DashboardPage() {
         <Link className="mt-4 inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800" href="/login">
           Przejdź do logowania
         </Link>
+      </div>
+    );
+  }
+
+  if (role === "player" && playerId) {
+    redirect(`/players/${playerId}`);
+  }
+  if (role === "player" && !playerId) {
+    return (
+      <div className="surface p-6">
+        <div className="page-title">Panel zawodnika</div>
+        <div className="mt-2 text-sm text-slate-600">
+          Konto zawodnika nie jest jeszcze przypisane do profilu. Skontaktuj sie z administratorem.
+        </div>
       </div>
     );
   }

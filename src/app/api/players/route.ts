@@ -5,10 +5,19 @@ import { Player } from "@/models/Player";
 import { requireRoleApi } from "@/lib/auth";
 
 export async function GET() {
-  const auth = await requireRoleApi(["admin", "trainer", "viewer"]);
+  const auth = await requireRoleApi(["admin", "trainer", "viewer", "player"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
 
   await dbConnect();
+  const role = (auth.session?.user as any)?.role;
+  const ownPlayerId = (auth.session?.user as any)?.playerId;
+
+  if (role === "player") {
+    if (!ownPlayerId) return NextResponse.json([], { status: 200 });
+    const player = await Player.findById(ownPlayerId);
+    return NextResponse.json(player ? [player] : [], { status: 200 });
+  }
+
   const players = await Player.find().sort({ lastName: 1, firstName: 1 });
   return NextResponse.json(players);
 }

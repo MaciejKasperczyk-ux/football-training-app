@@ -34,8 +34,15 @@ export default async function TrainingsPage() {
   }
 
   await dbConnect();
+  const role = (session.user as { role?: string; playerId?: string | null } | undefined)?.role;
+  const ownPlayerId = (session.user as { role?: string; playerId?: string | null } | undefined)?.playerId;
 
-  const trainings = await TrainingSession.find().sort({ date: -1 }).lean();
+  const trainings =
+    role === "player"
+      ? ownPlayerId
+        ? await TrainingSession.find({ players: ownPlayerId }).sort({ date: -1 }).lean()
+        : []
+      : await TrainingSession.find().sort({ date: -1 }).lean();
   const players = await Player.find().lean();
 
   const playersMap = new Map<string, string>();
@@ -52,9 +59,11 @@ export default async function TrainingsPage() {
 
       <div className="flex items-center justify-between">
         <div className="text-sm text-slate-600">Zestawienie wszystkich zarejestrowanych treningow</div>
-        <Link className="btn btn-primary" href="/trainings/new">
-          Dodaj trening
-        </Link>
+        {role === "admin" || role === "trainer" ? (
+          <Link className="btn btn-primary" href="/trainings/new">
+            Dodaj trening
+          </Link>
+        ) : null}
       </div>
 
       {trainings.length === 0 ? (
@@ -64,11 +73,7 @@ export default async function TrainingsPage() {
           {(trainings as TrainingListItem[]).map((t) => {
             const trainingPlayers = ((t.players ?? []) as string[]).map((pid) => playersMap.get(String(pid)) ?? "Nieznany");
             return (
-              <Link
-                key={String(t._id)}
-                href={`/trainings/${String(t._id)}`}
-                className="surface w-full p-4 transition hover:-translate-y-0.5 hover:shadow-lg"
-              >
+              <div key={String(t._id)} className="surface w-full p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <div className="text-sm text-slate-500">Data treningu</div>
@@ -92,7 +97,12 @@ export default async function TrainingsPage() {
                     ))
                   )}
                 </div>
-              </Link>
+                {role === "admin" || role === "trainer" ? (
+                  <Link className="btn btn-secondary mt-3 w-fit" href={`/trainings/${String(t._id)}`}>
+                    Raport i szczegoly
+                  </Link>
+                ) : null}
+              </div>
             );
           })}
         </div>

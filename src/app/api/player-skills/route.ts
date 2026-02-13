@@ -15,13 +15,24 @@ const createSchema = z.object({
 });
 
 export async function GET(req: Request) {
-  const auth = await requireRoleApi(["admin", "trainer", "viewer"]);
+  const auth = await requireRoleApi(["admin", "trainer", "viewer", "player"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
 
   await dbConnect();
 
   const { searchParams } = new URL(req.url);
-  const playerId = searchParams.get("playerId");
+  let playerId = searchParams.get("playerId");
+  const role = (auth.session?.user as any)?.role;
+  const ownPlayerId = (auth.session?.user as any)?.playerId;
+
+  if (role === "player") {
+    if (!ownPlayerId) return NextResponse.json([], { status: 200 });
+    if (playerId && String(playerId) !== String(ownPlayerId)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    playerId = String(ownPlayerId);
+  }
+
   if (!playerId) return NextResponse.json({ error: "playerId is required" }, { status: 400 });
 
   const docs = await PlayerSkill.find({ playerId }).sort({ updatedAt: -1 });

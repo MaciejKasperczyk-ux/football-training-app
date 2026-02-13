@@ -9,9 +9,10 @@ export function ChangePasswordGuard() {
   const router = useRouter();
 
   useEffect(() => {
+    const role = (session?.user as any)?.role;
     if (
       session?.user &&
-      (session.user as any).role === "trainer" &&
+      (role === "trainer" || role === "player") &&
       !(session.user as any).hasPasswordChanged
     ) {
       router.push("/change-password");

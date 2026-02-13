@@ -16,6 +16,27 @@ export default function MobileBottomNav({ role }: { role?: Role }) {
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
+  if (role === "player") {
+    return (
+      <div className="mobile-bottom-nav md:hidden">
+        <div className="mobile-bottom-nav-inner">
+          <Link href="/" className={itemClass(pathname === "/")}>
+            Start
+          </Link>
+          <Link href="/players" className={itemClass(isActive("/players"))}>
+            Profil
+          </Link>
+          <Link href="/change-password" className={itemClass(isActive("/change-password"))}>
+            Haslo
+          </Link>
+          <Link href="/logout" className={itemClass(isActive("/logout"))}>
+            Wyloguj
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mobile-bottom-nav md:hidden">
       <div className="mobile-bottom-nav-inner">

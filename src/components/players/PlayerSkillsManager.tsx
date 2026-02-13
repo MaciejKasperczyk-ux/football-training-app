@@ -25,7 +25,7 @@ function toDateInput(value?: string) {
   return new Date(value).toISOString().slice(0, 10);
 }
 
-export default function PlayerSkillsManager({ playerId }: { playerId: string }) {
+export default function PlayerSkillsManager({ playerId, canManage = true }: { playerId: string; canManage?: boolean }) {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [rows, setRows] = useState<PlayerSkill[]>([]);
   const [loading, setLoading] = useState(false);
@@ -53,6 +53,7 @@ export default function PlayerSkillsManager({ playerId }: { playerId: string }) 
 
   async function addRow(e: React.FormEvent) {
     e.preventDefault();
+    if (!canManage) return;
     if (!skillId) return;
 
     setLoading(true);
@@ -84,6 +85,7 @@ export default function PlayerSkillsManager({ playerId }: { playerId: string }) 
   }
 
   async function updateRow(id: string, patch: Partial<PlayerSkill>) {
+    if (!canManage) return;
     const res = await fetch(`/api/player-skills/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -99,6 +101,7 @@ export default function PlayerSkillsManager({ playerId }: { playerId: string }) 
   }
 
   async function removeRow(id: string) {
+    if (!canManage) return;
     const ok = window.confirm("Usunąć przypisaną umiejętność?");
     if (!ok) return;
 
@@ -126,58 +129,64 @@ export default function PlayerSkillsManager({ playerId }: { playerId: string }) 
       </div>
 
       <div className="p-5">
-        <form onSubmit={addRow} className="grid gap-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="grid gap-1">
-              <label className="field-label">Umiejetnosc</label>
-              <select className="field-select" value={skillId} onChange={(e) => setSkillId(e.target.value)}>
-                <option value="">Wybierz</option>
-                {skills.map((s) => (
-                  <option key={s._id} value={s._id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+        {canManage ? (
+          <form onSubmit={addRow} className="grid gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid gap-1">
+                <label className="field-label">Umiejetnosc</label>
+                <select className="field-select" value={skillId} onChange={(e) => setSkillId(e.target.value)}>
+                  <option value="">Wybierz</option>
+                  {skills.map((s) => (
+                    <option key={s._id} value={s._id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid gap-1">
+                <label className="field-label">Podumiejetnosc</label>
+                <select
+                  className="field-select"
+                  value={detailId}
+                  onChange={(e) => setDetailId(e.target.value)}
+                  disabled={!selectedSkill || (selectedSkill.details?.length ?? 0) === 0}
+                >
+                  <option value="">Brak</option>
+                  {(selectedSkill?.details ?? []).map((d) => (
+                    <option key={d._id} value={d._id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid gap-1">
+                <label className="field-label">Planowana data</label>
+                <input className="field-input" type="date" value={plannedDate} onChange={(e) => setPlannedDate(e.target.value)} />
+              </div>
             </div>
 
             <div className="grid gap-1">
-              <label className="field-label">Podumiejetnosc</label>
-              <select
-                className="field-select"
-                value={detailId}
-                onChange={(e) => setDetailId(e.target.value)}
-                disabled={!selectedSkill || (selectedSkill.details?.length ?? 0) === 0}
+              <label className="field-label">Notatka</label>
+              <input className="field-input" value={notes} onChange={(e) => setNotes(e.target.value)} />
+            </div>
+
+            <div>
+              <button
+                disabled={loading || !skillId}
+                className="btn btn-primary"
+                type="submit"
               >
-                <option value="">Brak</option>
-                {(selectedSkill?.details ?? []).map((d) => (
-                  <option key={d._id} value={d._id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
+                {loading ? "Dodawanie..." : "Przypisz umiejetnosc"}
+              </button>
             </div>
-
-            <div className="grid gap-1">
-              <label className="field-label">Planowana data</label>
-              <input className="field-input" type="date" value={plannedDate} onChange={(e) => setPlannedDate(e.target.value)} />
-            </div>
+          </form>
+        ) : (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+            Podglad umiejetnosci przypisanych do zawodnika.
           </div>
-
-          <div className="grid gap-1">
-            <label className="field-label">Notatka</label>
-            <input className="field-input" value={notes} onChange={(e) => setNotes(e.target.value)} />
-          </div>
-
-          <div>
-            <button
-              disabled={loading || !skillId}
-              className="btn btn-primary"
-              type="submit"
-            >
-              {loading ? "Dodawanie..." : "Przypisz umiejetnosc"}
-            </button>
-          </div>
-        </form>
+        )}
       </div>
 
       <div className="border-t border-gray-200">
@@ -197,32 +206,38 @@ export default function PlayerSkillsManager({ playerId }: { playerId: string }) 
                   {r.notes ? <div className="mt-1 text-xs text-slate-600">{r.notes}</div> : null}
                 </div>
 
-                <div className="flex flex-col gap-2 md:flex-row md:items-center">
-                  <select
-                    className="field-select"
-                    value={r.status}
-                    onChange={(e) => updateRow(r._id, { status: e.target.value as any })}
-                  >
-                    <option value="plan">plan</option>
-                    <option value="w_trakcie">w trakcie</option>
-                    <option value="zrobione">zrobione</option>
-                  </select>
+                {canManage ? (
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                    <select
+                      className="field-select"
+                      value={r.status}
+                      onChange={(e) => updateRow(r._id, { status: e.target.value as any })}
+                    >
+                      <option value="plan">plan</option>
+                      <option value="w_trakcie">w trakcie</option>
+                      <option value="zrobione">zrobione</option>
+                    </select>
 
-                  <input
-                    className="field-input"
-                    type="date"
-                    value={toDateInput(r.doneDate)}
-                    onChange={(e) => updateRow(r._id, { doneDate: e.target.value || undefined })}
-                  />
+                    <input
+                      className="field-input"
+                      type="date"
+                      value={toDateInput(r.doneDate)}
+                      onChange={(e) => updateRow(r._id, { doneDate: e.target.value || undefined })}
+                    />
 
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    onClick={() => removeRow(r._id)}
-                  >
-                    Usuń
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      onClick={() => removeRow(r._id)}
+                    >
+                      Usun
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-sm text-slate-700">
+                    Status: <span className="font-medium">{r.status.replace("_", " ")}</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>

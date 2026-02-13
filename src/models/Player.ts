@@ -13,6 +13,7 @@ const PlayerSchema = new Schema(
     notes: { type: String, required: false },
     isActive: { type: Boolean, default: true },
     trainers: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: false, unique: true, sparse: true },
   },
   { timestamps: true }
 );

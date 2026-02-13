@@ -8,7 +8,7 @@ import { isValidObjectId } from "mongoose";
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_: Request, { params }: Ctx) {
-  const auth = await requireRoleApi(["admin", "trainer", "viewer"]);
+  const auth = await requireRoleApi(["admin", "trainer", "viewer", "player"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
 
   await dbConnect();
@@ -16,6 +16,14 @@ export async function GET(_: Request, { params }: Ctx) {
   if (!isValidObjectId(id)) return NextResponse.json({ error: "Invalid training id" }, { status: 400 });
   const doc = await TrainingSession.findById(id);
   if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const role = (auth.session?.user as any)?.role;
+  const ownPlayerId = (auth.session?.user as any)?.playerId;
+  if (role === "player") {
+    const hasAccess = (doc.players ?? []).some((pid: any) => String(pid) === String(ownPlayerId ?? ""));
+    if (!hasAccess) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   return NextResponse.json(doc);
 }
 

@@ -6,11 +6,13 @@ import { PlayerSkill } from "@/models/PlayerSkill";
 import { Skill } from "@/models/Skill";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+import { canAccessPlayer } from "@/lib/auth";
 import DeletePlayerButton from "@/components/players/DeletePlayerButton";
 import EditPlayerPanel from "@/components/players/EditPlayerPanel";
 import PlayerSkillsManager from "@/components/players/PlayerSkillsManager";
 import PlayerGoals from "@/components/players/PlayerGoals";
 import PlayerSkillsRadar from "@/components/players/PlayerSkillsRadar";
+import PlayerAccountPanel from "@/components/players/PlayerAccountPanel";
 
 type PageProps = { params: Promise<{ id: string }> };
 type SkillItem = { _id: unknown; name: string; details?: unknown[] };
@@ -56,6 +58,17 @@ export default async function PlayerPage({ params }: PageProps) {
         <Link className="btn btn-primary mt-4" href="/login">
           Przejdz do logowania
         </Link>
+      </div>
+    );
+  }
+
+  const role = (session.user as { role?: string; playerId?: string | null } | undefined)?.role;
+  const canManage = role === "admin" || role === "trainer";
+  if (!canAccessPlayer(session.user as any, id)) {
+    return (
+      <div className="surface p-6">
+        <div className="page-title">Profil zawodnika</div>
+        <div className="mt-2 text-sm text-slate-600">Brak dostepu do tego profilu.</div>
       </div>
     );
   }
@@ -123,19 +136,23 @@ export default async function PlayerPage({ params }: PageProps) {
             <p className="page-subtitle">Profil zawodnika, historia treningow i plan rozwoju.</p>
           </div>
           <div className="flex items-center gap-2">
-            <Link className="btn btn-secondary" href="/players">
-              Wroc do listy
-            </Link>
-            <DeletePlayerButton playerId={String(playerProfile._id)} />
+            {canManage ? (
+              <>
+                <Link className="btn btn-secondary" href="/players">
+                  Wroc do listy
+                </Link>
+                <DeletePlayerButton playerId={String(playerProfile._id)} />
+              </>
+            ) : null}
           </div>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <EditPlayerPanel player={playerProfile} playerId={String(playerProfile._id)} />
-          <PlayerSkillsManager playerId={String(playerProfile._id)} />
-          <PlayerGoals playerId={String(playerProfile._id)} />
+          {canManage ? <EditPlayerPanel player={playerProfile} playerId={String(playerProfile._id)} /> : null}
+          <PlayerSkillsManager playerId={String(playerProfile._id)} canManage={canManage} />
+          <PlayerGoals playerId={String(playerProfile._id)} canManage={canManage} />
 
           <div className="surface p-5">
             <div className="mb-3">
@@ -148,7 +165,7 @@ export default async function PlayerPage({ params }: PageProps) {
             ) : (
               <div className="grid gap-2">
                 {(trainings as TrainingItem[]).map((training) => (
-                  <Link key={String(training._id)} href={`/trainings/${String(training._id)}`} className="surface-muted p-3">
+                  <div key={String(training._id)} className="surface-muted p-3">
                     <div className="text-sm font-semibold">
                       {new Date(training.date).toLocaleDateString("pl-PL")}
                       {training.durationMinutes ? ` - ${training.durationMinutes} min` : ""}
@@ -156,7 +173,12 @@ export default async function PlayerPage({ params }: PageProps) {
                     {training.goal ? <div className="mt-1 text-sm text-slate-600">{training.goal}</div> : null}
                     {training.notes ? <div className="mt-1 text-xs text-slate-600">{training.notes}</div> : null}
                     <div className="mt-2"><span className="pill">Elementy: {training.entries?.length ?? 0}</span></div>
-                  </Link>
+                    {canManage ? (
+                      <Link className="btn btn-secondary mt-3 w-fit" href={`/trainings/${String(training._id)}`}>
+                        Szczegoly
+                      </Link>
+                    ) : null}
+                  </div>
                 ))}
               </div>
             )}
@@ -165,6 +187,7 @@ export default async function PlayerPage({ params }: PageProps) {
 
         <div className="space-y-4">
           <PlayerSkillsRadar data={skillProgress} />
+          {role === "admin" ? <PlayerAccountPanel playerId={String(playerProfile._id)} playerName={`${player.firstName} ${player.lastName}`} /> : null}
 
           <div className="surface p-5">
             <h2 className="section-title">Podsumowanie</h2>

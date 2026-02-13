@@ -34,6 +34,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          playerId: user.playerId ? String(user.playerId) : null,
           hasPasswordChanged: user.hasPasswordChanged,
         } as any;
       },
@@ -42,16 +43,19 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
-        token.name = (user as any).name;
-        token.hasPasswordChanged = (user as any).hasPasswordChanged;
+        (token as any).role = (user as any).role;
+        (token as any).name = (user as any).name;
+        (token as any).playerId = (user as any).playerId ?? null;
+        (token as any).hasPasswordChanged = (user as any).hasPasswordChanged;
       }
       return token;
     },
     async session({ session, token }) {
       (session as any).user = session.user ?? {};
+      (session.user as any).id = token.sub;
       (session.user as any).role = token.role;
       (session.user as any).name = token.name as any;
+      (session.user as any).playerId = (token as any).playerId ?? null;
       (session.user as any).hasPasswordChanged = token.hasPasswordChanged;
       return session;
     },

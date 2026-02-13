@@ -11,7 +11,7 @@ type Goal = {
   status: "planned" | "in_progress" | "done";
 };
 
-export default function PlayerGoals({ playerId }: { playerId: string }) {
+export default function PlayerGoals({ playerId, canManage = true }: { playerId: string; canManage?: boolean }) {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -32,6 +32,7 @@ export default function PlayerGoals({ playerId }: { playerId: string }) {
 
   async function addGoal(e: React.FormEvent) {
     e.preventDefault();
+    if (!canManage) return;
     setLoading(true);
 
     const res = await fetch("/api/goals", {
@@ -57,6 +58,7 @@ export default function PlayerGoals({ playerId }: { playerId: string }) {
   }
 
   async function setStatus(goalId: string, status: Goal["status"]) {
+    if (!canManage) return;
     const res = await fetch(`/api/goals/${goalId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -72,6 +74,7 @@ export default function PlayerGoals({ playerId }: { playerId: string }) {
   }
 
   async function removeGoal(goalId: string) {
+    if (!canManage) return;
     if (!window.confirm("Czy na pewno usunac cel?")) return;
 
     const res = await fetch(`/api/goals/${goalId}`, { method: "DELETE" });
@@ -90,30 +93,36 @@ export default function PlayerGoals({ playerId }: { playerId: string }) {
         <p className="section-copy">Monitorowanie postepu i deadlinow zawodnika.</p>
       </div>
 
-      <form onSubmit={addGoal} className="grid gap-3">
-        <div className="grid gap-1">
-          <label className="field-label">Nazwa celu</label>
-          <input className="field-input" value={title} onChange={(e) => setTitle(e.target.value)} />
-        </div>
-
-        <div className="grid gap-1">
-          <label className="field-label">Opis</label>
-          <input className="field-input" value={description} onChange={(e) => setDescription(e.target.value)} />
-        </div>
-
-        <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+      {canManage ? (
+        <form onSubmit={addGoal} className="grid gap-3">
           <div className="grid gap-1">
-            <label className="field-label">Termin</label>
-            <input className="field-input" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            <label className="field-label">Nazwa celu</label>
+            <input className="field-input" value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
 
-          <div className="flex items-end">
-            <button disabled={loading || !title.trim()} className="btn btn-primary" type="submit">
-              {loading ? "Dodawanie..." : "Dodaj cel"}
-            </button>
+          <div className="grid gap-1">
+            <label className="field-label">Opis</label>
+            <input className="field-input" value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
+
+          <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+            <div className="grid gap-1">
+              <label className="field-label">Termin</label>
+              <input className="field-input" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            </div>
+
+            <div className="flex items-end">
+              <button disabled={loading || !title.trim()} className="btn btn-primary" type="submit">
+                {loading ? "Dodawanie..." : "Dodaj cel"}
+              </button>
+            </div>
+          </div>
+        </form>
+      ) : (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+          Podglad celow zawodnika.
         </div>
-      </form>
+      )}
 
       <div className="mt-4 grid gap-2">
         {goals.length === 0 ? (
@@ -130,21 +139,25 @@ export default function PlayerGoals({ playerId }: { playerId: string }) {
                   {goal.description ? <div className="mt-1 text-xs text-slate-600">{goal.description}</div> : null}
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <select
-                    className="field-select"
-                    value={goal.status}
-                    onChange={(e) => setStatus(goal._id, e.target.value as Goal["status"])}
-                  >
-                    <option value="planned">plan</option>
-                    <option value="in_progress">w trakcie</option>
-                    <option value="done">zrobione</option>
-                  </select>
+                {canManage ? (
+                  <div className="flex items-center gap-2">
+                    <select
+                      className="field-select"
+                      value={goal.status}
+                      onChange={(e) => setStatus(goal._id, e.target.value as Goal["status"])}
+                    >
+                      <option value="planned">plan</option>
+                      <option value="in_progress">w trakcie</option>
+                      <option value="done">zrobione</option>
+                    </select>
 
-                  <button type="button" className="btn btn-danger" onClick={() => removeGoal(goal._id)}>
-                    Usun
-                  </button>
-                </div>
+                    <button type="button" className="btn btn-danger" onClick={() => removeGoal(goal._id)}>
+                      Usun
+                    </button>
+                  </div>
+                ) : (
+                  <span className="pill">{goal.status.replace("_", " ")}</span>
+                )}
               </div>
             </div>
           ))

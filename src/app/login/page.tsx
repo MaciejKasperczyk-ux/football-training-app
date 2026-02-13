@@ -30,7 +30,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-4">
         <div className="hero-card">
           <h1 className="page-title">Logowanie</h1>
-          <p className="page-subtitle">Zaloguj sie do panelu trenera.</p>
+          <p className="page-subtitle">Zaloguj sie do panelu trenera lub zawodnika.</p>
         </div>
 
         <form onSubmit={onSubmit} className="surface space-y-3 p-5">

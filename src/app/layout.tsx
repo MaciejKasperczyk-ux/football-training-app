@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
   const role = (session?.user as { role?: string } | undefined)?.role;
+  const playerId = (session?.user as { playerId?: string | null } | undefined)?.playerId;
 
   return (
     <html lang="pl">
@@ -31,30 +32,43 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                       Trening indywidualny
                     </Link>
                     <span className="hidden sm:inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs text-sky-900">
-                      {role === "admin" ? "Panel admina" : "Panel trenera"}
+                      {role === "admin" ? "Panel admina" : role === "player" ? "Panel zawodnika" : "Panel trenera"}
                     </span>
                   </div>
 
                   <nav className="ml-auto flex flex-wrap items-center gap-1 text-sm">
-                    <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/players">
-                      Zawodnicy
-                    </Link>
-                    <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/trainings">
-                      Treningi
-                    </Link>
-                    <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/skills">
-                      Umiejętności
-                    </Link>
-                    {role === "admin" ? (
+                    {role === "player" ? (
                       <>
-                        <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/admin/trainers">
-                          Trenerzy
+                        <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href={playerId ? `/players/${playerId}` : "/"}>
+                          Moj profil
                         </Link>
-                        <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/admin/users">
-                          Admin
+                        <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/change-password">
+                          Haslo
                         </Link>
                       </>
-                    ) : null}
+                    ) : (
+                      <>
+                        <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/players">
+                          Zawodnicy
+                        </Link>
+                        <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/trainings">
+                          Treningi
+                        </Link>
+                        <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/skills">
+                          Umiejetnosci
+                        </Link>
+                        {role === "admin" ? (
+                          <>
+                            <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/admin/trainers">
+                              Trenerzy
+                            </Link>
+                            <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/admin/users">
+                              Admin
+                            </Link>
+                          </>
+                        ) : null}
+                      </>
+                    )}
                     <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/logout">
                       Wyloguj
                     </Link>

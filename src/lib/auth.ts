@@ -2,7 +2,12 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 
-export type AppRole = "admin" | "trainer" | "viewer";
+export type AppRole = "admin" | "trainer" | "viewer" | "player";
+
+export type SessionUserLike = {
+  role?: AppRole;
+  playerId?: string | null;
+};
 
 export async function getSessionOrNull() {
   return getServerSession(authOptions);
@@ -21,4 +26,10 @@ export async function requireRoleApi(roles: AppRole[]) {
   }
 
   return { ok: true as const, status: 200 as const, session };
+}
+
+export function canAccessPlayer(user: SessionUserLike | undefined, playerId: string) {
+  if (!user?.role) return false;
+  if (user.role === "player") return String(user.playerId ?? "") === String(playerId);
+  return true;
 }

@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { Providers } from "@/app/providers";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "Trening indywidualny piłki nożnej",
@@ -81,6 +82,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main className="app-shell pb-24 md:pb-8">{children}</main>
           {session ? <MobileBottomNav role={role} /> : null}
         </Providers>
+        <SpeedInsights />
       </body>
     </html>
   );

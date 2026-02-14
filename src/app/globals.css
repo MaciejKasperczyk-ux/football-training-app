@@ -26,7 +26,11 @@ body {
   background:
     radial-gradient(circle at 8% -10%, #c7f0ff 0%, transparent 28%),
     radial-gradient(circle at 95% 0%, #dbeafe 0%, transparent 25%),
+    radial-gradient(circle at 50% 100%, #f0d9ff 0%, transparent 35%),
     linear-gradient(180deg, #f8fbff 0%, var(--bg-page) 38%, #edf2f8 100%);
+  background-attachment: fixed;
+  background-size: 100% 100%;
+  min-height: 100vh;
 }
 
 .app-shell {

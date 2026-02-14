@@ -11,6 +11,10 @@
         "/^git add -A; git commit -m \"chore: rename platform to Futbolucja\"; git push$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^git add -A ; git commit -m \"fix: make background gradient fixed during scroll with enhanced modern gradient\" ; git push$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

@@ -3,6 +3,10 @@
         "/^git add -A; git commit -m \"chore: apply UI improvements and Polish characters support\"; git push$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^git add -A; git commit -m \"feat: modernize UI with enhanced design, Polish characters, and improved UX\"; git push$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

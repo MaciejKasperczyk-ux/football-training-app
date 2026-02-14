@@ -21,49 +21,83 @@ export default function LoginPage() {
       callbackUrl: "/",
     });
 
-    if (res?.error) setError("Bledne dane logowania");
+    if (res?.error) setError("Błędne dane logowania");
     setLoading(false);
   }
 
   return (
-    <div className="min-h-[70vh] grid place-items-center">
-      <div className="w-full max-w-sm space-y-4">
-        <div className="hero-card">
-          <h1 className="page-title">Logowanie</h1>
-          <p className="page-subtitle">Zaloguj sie do panelu trenera lub zawodnika.</p>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        {/* Header Card */}
+        <div className="hero-card mb-6">
+          <h1 className="page-title text-center">⚽ Platforma Treningowa</h1>
+          <p className="page-subtitle text-center mt-2">Zaloguj się do panelu trenera lub zawodnika</p>
         </div>
 
-        <form onSubmit={onSubmit} className="surface space-y-3 p-5">
-          <div className="space-y-1">
-            <label className="field-label">Email</label>
-            <input
-              className="field-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              type="email"
-              autoComplete="email"
-              required
-            />
-          </div>
+        {/* Login Form Card */}
+        <div className="bg-white rounded-xl shadow-lg p-8 border border-slate-100">
+          <form onSubmit={onSubmit} className="space-y-5">
+            {/* Email Field */}
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700">Adres e-mail</label>
+              <input
+                className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                placeholder="twój@email.com"
+                autoComplete="email"
+                required
+              />
+            </div>
 
-          <div className="space-y-1">
-            <label className="field-label">Haslo</label>
-            <input
-              className="field-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-              autoComplete="current-password"
-              required
-            />
-          </div>
+            {/* Password Field */}
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-slate-700">Hasło</label>
+              <input
+                className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                type="password"
+                placeholder="Wpisz swoje hasło"
+                autoComplete="current-password"
+                required
+              />
+            </div>
 
-          {error ? <div className="text-sm text-red-600">{error}</div> : null}
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                <span className="text-red-600 text-xl mt-0.5">⚠️</span>
+                <div>
+                  <p className="text-sm font-semibold text-red-800">Błąd logowania</p>
+                  <p className="text-sm text-red-700 mt-0.5">{error}</p>
+                </div>
+              </div>
+            )}
 
-          <button disabled={loading} className="btn btn-primary w-full" type="submit">
-            {loading ? "Logowanie..." : "Zaloguj sie"}
-          </button>
-        </form>
+            {/* Submit Button */}
+            <button
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-400 disabled:to-slate-500 text-white font-semibold py-3 rounded-lg transition duration-200 flex items-center justify-center gap-2 mt-6"
+              type="submit"
+            >
+              {loading ? (
+                <>
+                  <span className="inline-block animate-spin">⏳</span>
+                  Logowanie...
+                </>
+              ) : (
+                <>🔐 Zaloguj się</>
+              )}
+            </button>
+          </form>
+
+          {/* Footer Info */}
+          <p className="text-center text-xs text-slate-500 mt-6">
+            Hasło zostało zaszyfrowane i bezpieczne
+          </p>
+        </div>
       </div>
     </div>
   );

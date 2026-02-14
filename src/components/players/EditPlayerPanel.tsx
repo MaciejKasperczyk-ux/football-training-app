@@ -228,8 +228,6 @@ export default function EditPlayerPanel({ player, playerId }: { player: any; pla
         </div>
       )}
       </div>
-
-      </div>
     </div>
   );
 }

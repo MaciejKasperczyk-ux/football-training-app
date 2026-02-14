@@ -17,7 +17,6 @@ type PlayerSkill = {
   plannedDate?: string;
   doneDate?: string;
   status: "plan" | "w_trakcie" | "zrobione";
-  rating?: number;
   notes?: string;
 };
 
@@ -132,31 +131,14 @@ export default function PlayerSkillsManager({ playerId, canManage = true }: { pl
       <div className="p-5">
         {canManage ? (
           <form onSubmit={addRow} className="grid gap-3">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="grid gap-1">
                 <label className="field-label">Umiejetnosc</label>
                 <select className="field-select" value={skillId} onChange={(e) => setSkillId(e.target.value)}>
-                  <option value="">Wybierz</option>
+                  <option value="">Wybierz umiejetnosc</option>
                   {skills.map((s) => (
                     <option key={s._id} value={s._id}>
                       {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid gap-1">
-                <label className="field-label">Podumiejetnosc</label>
-                <select
-                  className="field-select"
-                  value={detailId}
-                  onChange={(e) => setDetailId(e.target.value)}
-                  disabled={!selectedSkill || (selectedSkill.details?.length ?? 0) === 0}
-                >
-                  <option value="">Brak</option>
-                  {(selectedSkill?.details ?? []).map((d) => (
-                    <option key={d._id} value={d._id}>
-                      {d.name}
                     </option>
                   ))}
                 </select>
@@ -167,6 +149,29 @@ export default function PlayerSkillsManager({ playerId, canManage = true }: { pl
                 <input className="field-input" type="date" value={plannedDate} onChange={(e) => setPlannedDate(e.target.value)} />
               </div>
             </div>
+
+            {/* Podumiejętności jako tagi */}
+            {selectedSkill && (selectedSkill.details?.length ?? 0) > 0 && (
+              <div className="grid gap-2">
+                <label className="field-label">Podumiejetnosci</label>
+                <div className="flex flex-wrap gap-2">
+                  {(selectedSkill.details ?? []).map((d) => (
+                    <button
+                      key={d._id}
+                      type="button"
+                      onClick={() => setDetailId(detailId === d._id ? "" : d._id)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all border-2 ${
+                        detailId === d._id
+                          ? "bg-blue-500 text-white border-blue-600 shadow-md"
+                          : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 hover:border-blue-300"
+                      }`}
+                    >
+                      {detailId === d._id ? "✓ " : ""}{d.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="grid gap-1">
               <label className="field-label">Notatka</label>
@@ -219,18 +224,6 @@ export default function PlayerSkillsManager({ playerId, canManage = true }: { pl
                       <option value="zrobione">zrobione</option>
                     </select>
 
-                    <div className="flex flex-col gap-1">
-                      <label className="text-xs font-medium text-slate-600">Ocena: {r.rating || "-"}/10</label>
-                      <input
-                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                        type="range"
-                        min="1"
-                        max="10"
-                        value={r.rating || 5}
-                        onChange={(e) => updateRow(r._id, { rating: parseInt(e.target.value) })}
-                      />
-                    </div>
-
                     <input
                       className="field-input"
                       type="date"
@@ -249,11 +242,6 @@ export default function PlayerSkillsManager({ playerId, canManage = true }: { pl
                 ) : (
                   <div className="text-sm text-slate-700">
                     Status: <span className="font-medium">{r.status.replace("_", " ")}</span>
-                    {r.rating && (
-                      <>
-                        {" "}• Ocena: <span className="font-medium">{r.rating}/10</span>
-                      </>
-                    )}
                   </div>
                 )}
               </div>

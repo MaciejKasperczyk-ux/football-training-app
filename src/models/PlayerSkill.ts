@@ -10,7 +10,6 @@ const PlayerSkillSchema = new Schema(
     doneDate: { type: Date, required: false },
 
     status: { type: String, enum: ["plan", "w_trakcie", "zrobione"], default: "plan" },
-    rating: { type: Number, min: 1, max: 10, required: false },
 
     notes: { type: String, required: false },
   },

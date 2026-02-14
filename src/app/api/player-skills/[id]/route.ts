@@ -10,7 +10,6 @@ const updateSchema = z.object({
   plannedDate: z.string().optional(),
   doneDate: z.string().optional(),
   status: z.enum(["plan", "w_trakcie", "zrobione"]).optional(),
-  rating: z.number().min(1).max(10).optional(),
   notes: z.string().optional(),
 });
 
@@ -30,7 +29,6 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
   if (parsed.data.plannedDate !== undefined) update.plannedDate = parsed.data.plannedDate ? new Date(parsed.data.plannedDate) : null;
   if (parsed.data.doneDate !== undefined) update.doneDate = parsed.data.doneDate ? new Date(parsed.data.doneDate) : null;
   if (parsed.data.status !== undefined) update.status = parsed.data.status;
-  if (parsed.data.rating !== undefined) update.rating = parsed.data.rating;
   if (parsed.data.notes !== undefined) update.notes = parsed.data.notes;
 
   const updated = await PlayerSkill.findByIdAndUpdate(id, update, { new: true });

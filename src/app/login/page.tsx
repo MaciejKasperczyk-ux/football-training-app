@@ -30,7 +30,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Header Card */}
         <div className="hero-card mb-6">
-          <h1 className="page-title text-center">⚽ Platforma Treningowa</h1>
+          <h1 className="page-title text-center">⚽ Futbolucja</h1>
           <p className="page-subtitle text-center mt-2">Zaloguj się do panelu trenera lub zawodnika</p>
         </div>
 

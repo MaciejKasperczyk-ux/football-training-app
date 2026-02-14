@@ -11,6 +11,7 @@ const createSchema = z.object({
   plannedDate: z.string().optional(),
   doneDate: z.string().optional(),
   status: z.enum(["plan", "w_trakcie", "zrobione"]).optional(),
+  rating: z.number().min(1).max(10).optional(),
   notes: z.string().optional(),
 });
 
@@ -56,6 +57,7 @@ export async function POST(req: Request) {
     plannedDate: parsed.data.plannedDate ? new Date(parsed.data.plannedDate) : undefined,
     doneDate: parsed.data.doneDate ? new Date(parsed.data.doneDate) : undefined,
     status: parsed.data.status ?? "plan",
+    rating: parsed.data.rating,
     notes: parsed.data.notes,
   });
 

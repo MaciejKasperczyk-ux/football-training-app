@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import PhotoUpload from "./PhotoUpload";
 
 type Trainer = { _id: string; name?: string; email?: string };
 
@@ -27,6 +28,7 @@ export default function EditPlayerPanel({ player, playerId }: { player: any; pla
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedToAdd, setSelectedToAdd] = useState("");
+  const [photo, setPhoto] = useState(player.photo);
 
   useEffect(() => {
     async function fetchTrainers() {
@@ -98,24 +100,33 @@ export default function EditPlayerPanel({ player, playerId }: { player: any; pla
   }
 
   return (
-    <div className="surface p-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="section-title">Dane zawodnika</h2>
-          <p className="section-copy">Edycja danych i przypisywanie trenerow.</p>
-        </div>
-        <button onClick={() => setEditing((value) => !value)} className="btn btn-secondary">
-          {editing ? "Anuluj" : "Edytuj"}
-        </button>
-      </div>
+    <div className="space-y-6">
+      {/* Photo Upload Section */}
+      <PhotoUpload 
+        playerId={playerId} 
+        currentPhoto={photo}
+        onPhotoUpdate={(photoUrl) => setPhoto(photoUrl)}
+      />
 
-      {!editing ? (
-        <div className="mt-4 grid gap-2 text-sm">
-          <div className="font-semibold">{firstName} {lastName}</div>
-          <div>Klub: {(club || "-")}</div>
-          <div>Pozycja: {(position || "-")}</div>
-          <div>Data urodzenia: {birthDate ? `${new Date(birthDate).toLocaleDateString("pl-PL")} (wiek: ${calculateAge(birthDate)})` : "-"}</div>
-          <div>Lepsza noga: {dominantFoot ? (dominantFoot === "left" ? "Lewa" : "Prawa") : "-"}</div>
+      {/* Player Info Section */}
+      <div className="surface p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="section-title">Dane zawodnika</h2>
+            <p className="section-copy">Edycja danych i przypisywanie trenerow.</p>
+          </div>
+          <button onClick={() => setEditing((value) => !value)} className="btn btn-secondary">
+            {editing ? "Anuluj" : "Edytuj"}
+          </button>
+        </div>
+
+        {!editing ? (
+          <div className="mt-4 grid gap-2 text-sm">
+            <div className="font-semibold">{firstName} {lastName}</div>
+            <div>Klub: {(club || "-")}</div>
+            <div>Pozycja: {(position || "-")}</div>
+            <div>Data urodzenia: {birthDate ? `${new Date(birthDate).toLocaleDateString("pl-PL")} (wiek: ${calculateAge(birthDate)})` : "-"}</div>
+            <div>Lepsza noga: {dominantFoot ? (dominantFoot === "left" ? "Lewa" : "Prawa") : "-"}</div>
 
           <div className="mt-2">
             <div className="mb-2 text-xs font-semibold text-slate-500">Trenerzy</div>

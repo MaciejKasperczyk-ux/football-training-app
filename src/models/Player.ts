@@ -11,6 +11,7 @@ const PlayerSchema = new Schema(
     position: { type: String, required: false, trim: true },
     dominantFoot: { type: String, enum: ["left", "right", "both"], required: false },
     notes: { type: String, required: false },
+    photo: { type: String, required: false },
     isActive: { type: Boolean, default: true },
     trainers: [{ type: Schema.Types.ObjectId, ref: "User" }],
     userId: { type: Schema.Types.ObjectId, ref: "User", required: false, unique: true, sparse: true },

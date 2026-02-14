@@ -17,6 +17,7 @@ type PlayerSkill = {
   plannedDate?: string;
   doneDate?: string;
   status: "plan" | "w_trakcie" | "zrobione";
+  rating?: number;
   notes?: string;
 };
 
@@ -218,6 +219,18 @@ export default function PlayerSkillsManager({ playerId, canManage = true }: { pl
                       <option value="zrobione">zrobione</option>
                     </select>
 
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-medium text-slate-600">Ocena: {r.rating || "-"}/10</label>
+                      <input
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                        type="range"
+                        min="1"
+                        max="10"
+                        value={r.rating || 5}
+                        onChange={(e) => updateRow(r._id, { rating: parseInt(e.target.value) })}
+                      />
+                    </div>
+
                     <input
                       className="field-input"
                       type="date"
@@ -236,6 +249,11 @@ export default function PlayerSkillsManager({ playerId, canManage = true }: { pl
                 ) : (
                   <div className="text-sm text-slate-700">
                     Status: <span className="font-medium">{r.status.replace("_", " ")}</span>
+                    {r.rating && (
+                      <>
+                        {" "}• Ocena: <span className="font-medium">{r.rating}/10</span>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

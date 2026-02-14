@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^git add -A; git commit -m \"chore: apply UI improvements and Polish characters support\"; git push$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

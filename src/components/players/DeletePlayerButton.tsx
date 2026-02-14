@@ -17,7 +17,7 @@ export default function DeletePlayerButton({ playerId }: { playerId: string }) {
     setLoading(false);
 
     if (!res.ok) {
-      alert("Nie udało się usunąć zawodnika");
+         alert("Nie udało się usunąć zawodnika");
       return;
     }
 

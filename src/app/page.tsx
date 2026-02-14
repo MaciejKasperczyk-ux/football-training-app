@@ -30,6 +30,13 @@ function statusLabel(status: string) {
   return status;
 }
 
+function getStatusColor(status: string) {
+  if (status === "planned") return "bg-blue-100 text-blue-700 border-blue-200";
+  if (status === "in_progress") return "bg-orange-100 text-orange-700 border-orange-200";
+  if (status === "done") return "bg-green-100 text-green-700 border-green-200";
+  return "bg-slate-100 text-slate-700 border-slate-200";
+}
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   const name = session?.user?.name ?? "Użytkownik";
@@ -38,10 +45,10 @@ export default async function DashboardPage() {
 
   if (!session?.user) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="text-2xl font-semibold tracking-tight">Panel</div>
-        <div className="mt-2 text-sm text-slate-600">Brak dostępu</div>
-        <Link className="mt-4 inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800" href="/login">
+      <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-lg">
+        <div className="text-3xl font-bold tracking-tight text-slate-900">Witaj w Futbolucja</div>
+        <div className="mt-2 text-base text-slate-600">Zaloguj się, aby uzyskać dostęp do panelu</div>
+        <Link className="mt-6 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-blue-800 transition-all" href="/login">
           Przejdź do logowania
         </Link>
       </div>
@@ -90,132 +97,168 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="text-sm text-slate-600">Witaj</div>
-        <div className="mt-1 text-2xl font-semibold tracking-tight">{name}</div>
-        <div className="mt-2 text-sm text-slate-600">
-          Szybki podgląd: zawodnicy, treningi oraz cele z terminami.
-        </div>
+      {/* Hero Section */}
+      <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-8 shadow-lg overflow-hidden relative">
+        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+        <div className="relative z-10">
+          <div className="text-sm font-semibold text-blue-600 uppercase tracking-wide">Witaj z powrotem</div>
+          <div className="mt-2 text-4xl font-bold tracking-tight text-slate-900">{name}</div>
+          <div className="mt-3 text-base text-slate-600">
+            Zarządzaj zawodnikami, treningami i śledź postępy w osiąganiu celów.
+          </div>
 
-        <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-          <Link className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800" href="/players/new">
-            Dodaj zawodnika
-          </Link>
-          <Link className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50" href="/trainings/new">
-            Dodaj trening
-          </Link>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="text-sm text-slate-600">Zawodnicy</div>
-          <div className="mt-1 text-3xl font-semibold tracking-tight">{playersCount}</div>
-          <div className="mt-2 text-sm text-slate-600">Baza zawodników w systemie</div>
-          <Link className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50" href="/players">
-            Otwórz listę
-          </Link>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="text-sm text-slate-600">Treningi</div>
-          <div className="mt-1 text-3xl font-semibold tracking-tight">{trainingsCount}</div>
-          <div className="mt-2 text-sm text-slate-600">Ostatnie 7 dni: {trainingsLast7}</div>
-          <Link className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50" href="/trainings">
-            Zobacz treningi
-          </Link>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="text-sm text-slate-600">Cele przeterminowane</div>
-          <div className="mt-1 text-3xl font-semibold tracking-tight">{goalsOverdue}</div>
-          <div className="mt-2 text-sm text-slate-600">Do nadrobienia w profilach</div>
-          <Link className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50" href="/players">
-            Przejdź do zawodników
-          </Link>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="text-sm text-slate-600">Skróty</div>
-          <div className="mt-3 grid gap-2">
-            <Link className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800" href="/players/new">
-              Nowy zawodnik
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <Link className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-blue-800 transition-all" href="/players/new">
+              + Dodaj zawodnika
             </Link>
-            <Link className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50" href="/trainings/new">
-              Nowy trening
-            </Link>
-            <Link className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50" href="/tests">
-              Testy i pomiary
+            <Link className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50 transition-all" href="/trainings/new">
+              + Zaplanuj trening
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
-            <div className="text-lg font-semibold tracking-tight">Najbliższe terminy celów</div>
-            <div className="mt-1 text-sm text-slate-600">Najbliższe 14 dni</div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Players Card */}
+        <div className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all cursor-pointer">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="text-sm font-medium text-slate-600">Zawodnicy</div>
+              <div className="mt-2 text-3xl font-bold text-slate-900">{playersCount}</div>
+              <div className="mt-2 text-xs text-slate-500">W bazie danych</div>
+            </div>
+            <div className="rounded-lg bg-blue-100 p-3 text-xl">👥</div>
+          </div>
+          <Link className="mt-4 inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100 transition-colors" href="/players">
+            Przejdź do listy
+          </Link>
+        </div>
+
+        {/* Trainings Card */}
+        <div className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-lg hover:border-orange-200 transition-all cursor-pointer">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="text-sm font-medium text-slate-600">Treningi</div>
+              <div className="mt-2 text-3xl font-bold text-slate-900">{trainingsCount}</div>
+              <div className="mt-2 text-xs text-slate-500">Ostatnie 7 dni: {trainingsLast7}</div>
+            </div>
+            <div className="rounded-lg bg-orange-100 p-3 text-xl">⚽</div>
+          </div>
+          <Link className="mt-4 inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100 transition-colors" href="/trainings">
+            Wszystkie treningi
+          </Link>
+        </div>
+
+        {/* Overdue Goals Card */}
+        <div className={`group rounded-2xl border-2 bg-white p-6 shadow-sm hover:shadow-lg transition-all cursor-pointer ${goalsOverdue > 0 ? "border-red-200 hover:border-red-300" : "border-slate-200 hover:border-green-200"}`}>
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="text-sm font-medium text-slate-600">Cele przeterminowane</div>
+              <div className={`mt-2 text-3xl font-bold ${goalsOverdue > 0 ? "text-red-600" : "text-green-600"}`}>
+                {goalsOverdue}
+              </div>
+              <div className="mt-2 text-xs text-slate-500">Wymagają uwagi</div>
+            </div>
+            <div className={`rounded-lg p-3 text-xl ${goalsOverdue > 0 ? "bg-red-100" : "bg-green-100"}`}>
+              {goalsOverdue > 0 ? "⚠️" : "✅"}
+            </div>
+          </div>
+          <Link className="mt-4 inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100 transition-colors" href="/players">
+            Przejrzyj zawodników
+          </Link>
+        </div>
+
+        {/* Quick Links Card */}
+        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100 p-6 shadow-sm">
+          <div className="text-sm font-medium text-slate-600 mb-4">Szybkie akcje</div>
+          <div className="space-y-2">
+            <Link className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 transition-colors border border-slate-200" href="/players/new">
+              <span>➕</span> Nowy zawodnik
+            </Link>
+            <Link className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 transition-colors border border-slate-200" href="/trainings/new">
+              <span>📋</span> Nowy trening
+            </Link>
+            <Link className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 transition-colors border border-slate-200" href="/skills">
+              <span>⭐</span> Umiejętności
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Content Grid */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Upcoming Goals */}
+        <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+          <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-6 py-5">
+            <div className="text-lg font-bold text-slate-900">📅 Najbliższe cele</div>
+            <div className="mt-1 text-sm text-slate-600">Terminy w ciągu 14 dni</div>
           </div>
 
-          <div className="p-5">
+          <div className="p-6">
             {goalsNext14.length === 0 ? (
-              <div className="text-sm text-slate-600">Brak celów z terminem w najbliższych 14 dniach</div>
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="text-4xl mb-2">🎯</div>
+                <div className="text-sm text-slate-600">Brak celów z terminem w najbliższych 14 dniach</div>
+              </div>
             ) : (
-              <div className="grid gap-3">
+              <div className="space-y-3">
                 {goalsNext14.map((g: any) => (
-                  <div key={String(g._id)} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold">{g.title}</div>
-                      <div className="mt-1 text-xs text-slate-600">
-                        Termin: {formatDatePL(new Date(g.dueDate))} , status: {statusLabel(g.status)}
+                  <Link key={String(g._id)} href={`/players/${String(g.playerId)}`} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 hover:bg-slate-100 hover:border-blue-200 transition-all group">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">{g.title}</div>
+                      <div className="mt-2 flex items-center gap-3">
+                        <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${getStatusColor(g.status)}`}>
+                          {statusLabel(g.status)}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {formatDatePL(new Date(g.dueDate))}
+                        </span>
                       </div>
                     </div>
-                    <Link className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50" href={`/players/${String(g.playerId)}`}>
-                      Profil
-                    </Link>
-                  </div>
+                    <div className="text-lg">→</div>
+                  </Link>
                 ))}
               </div>
             )}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
-            <div className="text-lg font-semibold tracking-tight">Zawodnicy</div>
-            <div className="mt-1 text-sm text-slate-600">Szybki dostęp do profili</div>
+        {/* Recent Players */}
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+          <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-6 py-5">
+            <div className="text-lg font-bold text-slate-900">⭐ Zawodnicy</div>
+            <div className="mt-1 text-sm text-slate-600">Szybki dostęp</div>
           </div>
 
-          <div className="p-5">
+          <div className="p-6">
             {players.length === 0 ? (
-              <div className="text-sm text-slate-600">Brak zawodników</div>
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="text-4xl mb-2">👥</div>
+                <div className="text-sm text-slate-600">Brak zawodników w bazie</div>
+              </div>
             ) : (
-              <div className="grid gap-3">
+              <div className="space-y-2">
                 {players.map((p: any) => (
-                  <div key={String(p._id)} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold">
+                  <Link key={String(p._id)} href={`/players/${String(p._id)}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 hover:bg-slate-100 hover:border-blue-200 transition-all group">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
                         {p.firstName} {p.lastName}
                       </div>
-                      <div className="mt-1 text-xs text-slate-600">
-                        {(p.club ?? "").trim() ? p.club : "Brak klubu"}
-                        {p.position ? ` , ${p.position}` : ""}
+                      <div className="mt-1 text-xs text-slate-500">
+                        {(p.club ?? "").trim() ? p.club : "—"}
+                        {p.position ? ` • ${p.position}` : ""}
                       </div>
                     </div>
-                    <Link className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50" href={`/players/${String(p._id)}`}>
-                      Profil
-                    </Link>
-                  </div>
+                    <div className="text-lg text-slate-400 group-hover:text-blue-600">→</div>
+                  </Link>
                 ))}
+
+                <Link className="mt-4 flex items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 text-sm font-semibold text-white hover:shadow-lg transition-all" href="/players">
+                  Pełna lista zawodników
+                </Link>
               </div>
             )}
-
-            <div className="mt-4">
-              <Link className="inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800" href="/players">
-                Przejdź do listy zawodników
-              </Link>
-            </div>
           </div>
         </div>
       </div>

@@ -1,16 +1,19 @@
 import Link from "next/link";
 import { dbConnect } from "@/lib/mongodb";
 import { Player } from "@/models/Player";
+import { User } from "@/models/User";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import DeletePlayerButton from "@/components/players/DeletePlayerButton";
 import { redirect } from "next/navigation";
-import { ageToGroup } from "@/lib/ageGroups";
+import { ageToGroup, normalizeAgeGroup, type AgeGroup } from "@/lib/ageGroups";
 
 type TrainerRef = {
   _id?: unknown;
   name?: string;
   email?: string;
+  yearGroups?: string[];
+  yearGroup?: string;
 };
 
 type PlayerListItem = {
@@ -43,6 +46,18 @@ function trainerDisplayName(value: TrainerRef | string): string {
   return value.name?.trim() || value.email?.trim() || String(value._id ?? "");
 }
 
+function trainerGroups(value: TrainerRef): string[] {
+  const fromArray = Array.isArray(value.yearGroups)
+    ? value.yearGroups.map((v) => normalizeAgeGroup(String(v))).filter((v): v is AgeGroup => v !== null)
+    : [];
+  if (fromArray.length) return fromArray;
+  if (value.yearGroup) {
+    const one = normalizeAgeGroup(value.yearGroup);
+    if (one) return [one];
+  }
+  return [];
+}
+
 export default async function PlayersPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -73,17 +88,38 @@ export default async function PlayersPage() {
     );
   }
 
-  const players = await Player.find()
-    .populate("trainers", "name email")
-    .sort({ lastName: 1, firstName: 1 })
-    .lean();
+  const [players, trainers] = await Promise.all([
+    Player.find().populate("trainers", "name email").sort({ lastName: 1, firstName: 1 }).lean(),
+    User.find({ role: "trainer" }).select("name email yearGroups yearGroup").lean(),
+  ]);
+
+  const groupTrainerMap = new Map<string, string[]>();
+  for (const trainerRaw of trainers as TrainerRef[]) {
+    const display = trainerDisplayName(trainerRaw);
+    if (!display) continue;
+    const groups = trainerGroups(trainerRaw);
+    for (const group of groups) {
+      const current = groupTrainerMap.get(group) ?? [];
+      if (!current.includes(display)) current.push(display);
+      groupTrainerMap.set(group, current);
+    }
+  }
 
   const playersList = players as PlayerListItem[];
   const playersWithMeta = playersList.map((player) => {
     const effectiveAge = typeof player.age === "number" ? player.age : calculateAgeFromBirthDate(player.birthDate);
     const group = ageToGroup(effectiveAge);
-    const trainerNames = (player.trainers ?? []).map(trainerDisplayName).filter(Boolean);
-    return { ...player, effectiveAge, group, trainerNames };
+    const assignedTrainerNames = (player.trainers ?? []).map(trainerDisplayName).filter(Boolean);
+    const groupTrainerNames = group ? groupTrainerMap.get(group) ?? [] : [];
+
+    return {
+      ...player,
+      effectiveAge,
+      group,
+      assignedTrainerNames,
+      groupTrainerNames,
+      visibleTrainerNames: assignedTrainerNames.length ? assignedTrainerNames : groupTrainerNames,
+    };
   });
 
   const clubCount = new Set(playersList.map((player) => String(player.club ?? "").trim()).filter(Boolean)).size;
@@ -91,8 +127,8 @@ export default async function PlayersPage() {
     .map((player) => player.effectiveAge)
     .filter((age): age is number => typeof age === "number");
   const avgAge = knownAges.length ? Math.round(knownAges.reduce((sum, age) => sum + age, 0) / knownAges.length) : null;
-  const groupedPlayers = new Map<string, typeof playersWithMeta>();
 
+  const groupedPlayers = new Map<string, typeof playersWithMeta>();
   for (const player of playersWithMeta) {
     const key = player.group ?? "Bez kategorii";
     const groupValues = groupedPlayers.get(key) ?? [];
@@ -114,7 +150,7 @@ export default async function PlayersPage() {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm text-slate-600">Baza zawodników i ich profile treningowe</div>
+        <div className="text-sm text-slate-300">Baza zawodników i ich profile treningowe</div>
         {role === "admin" || role === "trainer" ? (
           <Link className="btn btn-primary" href="/players/new">
             Dodaj zawodnika
@@ -131,60 +167,69 @@ export default async function PlayersPage() {
         </div>
 
         {playersList.length === 0 ? (
-          <div className="p-4 text-sm text-slate-600">Brak zawodników</div>
+          <div className="p-4 text-sm text-slate-300">Brak zawodników</div>
         ) : (
           <div className="space-y-6">
-            {sortedGroups.map(([group, groupPlayers]) => (
-              <section key={group} className="space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <h2 className="section-title">{group}</h2>
-                  <span className="pill">Zawodnicy: {groupPlayers.length}</span>
-                </div>
+            {sortedGroups.map(([group, groupPlayers]) => {
+              const groupTrainers = group === "Bez kategorii" ? [] : groupTrainerMap.get(group) ?? [];
+              return (
+                <section key={group} className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="section-title">{group}</h2>
+                    <span className="pill">Zawodnicy: {groupPlayers.length}</span>
+                  </div>
 
-                <div className="entity-grid">
-                  {groupPlayers.map((player) => (
-                    <article key={String(player._id)} className="entity-card">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <Link className="entity-title" href={`/players/${String(player._id)}`}>
-                            {player.firstName} {player.lastName}
+                  <div className="text-sm text-slate-300">
+                    Trenerzy grupy: {groupTrainers.length ? groupTrainers.join(", ") : "Brak trenera przypisanego do tej grupy"}
+                  </div>
+
+                  <div className="entity-grid">
+                    {groupPlayers.map((player) => (
+                      <article key={String(player._id)} className="entity-card">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <Link className="entity-title" href={`/players/${String(player._id)}`}>
+                              {player.firstName} {player.lastName}
+                            </Link>
+                            <p className="entity-subtle">{player.club ?? "Brak klubu"}</p>
+                          </div>
+                          <span className="pill">{player.position ?? "Brak pozycji"}</span>
+                        </div>
+
+                        <div className="entity-metrics mt-4">
+                          <div>
+                            <div className="entity-label">Wiek</div>
+                            <div className="entity-value">{player.effectiveAge ?? "-"}</div>
+                          </div>
+                          <div>
+                            <div className="entity-label">Pozycja</div>
+                            <div className="entity-value">{player.position ?? "-"}</div>
+                          </div>
+                          <div>
+                            <div className="entity-label">Klub</div>
+                            <div className="entity-value truncate">{player.club ?? "-"}</div>
+                          </div>
+                        </div>
+
+                        <div className="mt-3">
+                          <div className="entity-label">Trenerzy</div>
+                          <div className="mt-1 text-sm text-slate-200">
+                            {player.visibleTrainerNames.length ? player.visibleTrainerNames.join(", ") : "Brak przypisania"}
+                          </div>
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap justify-end gap-2">
+                          <Link className="btn btn-secondary" href={`/players/${String(player._id)}`}>
+                            Otwórz
                           </Link>
-                          <p className="entity-subtle">{player.club ?? "Brak klubu"}</p>
+                          {role === "admin" || role === "trainer" ? <DeletePlayerButton playerId={String(player._id)} /> : null}
                         </div>
-                        <span className="pill">{player.position ?? "Brak pozycji"}</span>
-                      </div>
-
-                      <div className="entity-metrics mt-4">
-                        <div>
-                          <div className="entity-label">Wiek</div>
-                          <div className="entity-value">{player.effectiveAge ?? "-"}</div>
-                        </div>
-                        <div>
-                          <div className="entity-label">Pozycja</div>
-                          <div className="entity-value">{player.position ?? "-"}</div>
-                        </div>
-                        <div>
-                          <div className="entity-label">Klub</div>
-                          <div className="entity-value truncate">{player.club ?? "-"}</div>
-                        </div>
-                      </div>
-
-                      <div className="mt-3">
-                        <div className="entity-label">Trenerzy</div>
-                        <div className="mt-1 text-sm text-slate-700">{player.trainerNames.length ? player.trainerNames.join(", ") : "Brak przypisania"}</div>
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap justify-end gap-2">
-                        <Link className="btn btn-secondary" href={`/players/${String(player._id)}`}>
-                          Otwórz
-                        </Link>
-                        {role === "admin" || role === "trainer" ? <DeletePlayerButton playerId={String(player._id)} /> : null}
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            ))}
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         )}
       </div>

@@ -9,8 +9,8 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
-  title: "Trening indywidualny piĹ‚ki noĹĽnej",
-  description: "Baza zawodnikĂłw, cele i treningi",
+  title: "Trening indywidualny piłki nożnej",
+  description: "Baza zawodników, cele i treningi",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -39,10 +39,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     {role === "player" ? (
                       <>
                         <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href={playerId ? `/players/${playerId}` : "/"}>
-                          MĂłj profil
+                          Mój profil
                         </Link>
                         <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/change-password">
-                          HasĹ‚o
+                          Hasło
                         </Link>
                       </>
                     ) : (
@@ -54,7 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                           Treningi
                         </Link>
                         <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/skills">
-                          UmiejÄ™tnoĹ›ci
+                          Umiejętności
                         </Link>
                         <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/charts">
                           Wykresy
@@ -83,7 +83,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main className="app-shell pb-24 md:pb-8">{children}</main>
           {session ? <MobileBottomNav role={role} /> : null}
           <footer style={{ textAlign: "center", fontSize: "0.9em", color: "#888", marginTop: 32 }}>
-            Â© {new Date().getFullYear()} Maciej Kasperczyk &lt;maciej.kasperczyk.scriptify365@gmail.com&gt;
+            © {new Date().getFullYear()} Maciej Kasperczyk &lt;maciej.kasperczyk.scriptify365@gmail.com&gt;
           </footer>
         </Providers>
         <SpeedInsights />

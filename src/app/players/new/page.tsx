@@ -12,7 +12,7 @@ export default function NewPlayerPage() {
   const [lastName, setLastName] = useState("");
   const [club, setClub] = useState("");
   const [position, setPosition] = useState("");
-  const [age, setAge] = useState<string>("");
+  const [age] = useState<string>("");
   const [birthDate, setBirthDate] = useState<string>("");
   const [dominantFoot, setDominantFoot] = useState<string>("");
 
@@ -47,7 +47,7 @@ export default function NewPlayerPage() {
   }
 
   return (
-    <div className="page-wrap max-w-3xl">
+    <div className="page-wrap max-w-3xl mx-auto w-full">
       <div className="hero-card">
         <h1 className="page-title">Nowy zawodnik</h1>
         <p className="page-subtitle">Wypelnij podstawowe informacje. Szczegoly treningowe dodasz pozniej.</p>

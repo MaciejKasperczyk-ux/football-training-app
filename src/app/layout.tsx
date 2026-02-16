@@ -31,6 +31,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <div className="w-full px-4 md:px-6 lg:px-10">
                 <div className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <div className="flex items-center gap-2">
+                    <Link href="/" className="inline-flex items-center justify-center rounded-xl bg-white p-1 shadow-sm ring-1 ring-slate-200">
+                      <img src="/logo.png" alt="Logo Futbolucja" className="h-9 w-9 object-contain" />
+                    </Link>
                     <Link
                       href="/"
                       className="rounded-xl bg-gradient-to-br from-slate-900 to-slate-700 px-3 py-2 text-sm font-semibold text-white shadow-sm"

@@ -30,6 +30,9 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Header Card */}
         <div className="hero-card mb-6">
+          <div className="mb-4 flex justify-center">
+            <img src="/logo.png" alt="Logo Futbolucja" className="h-20 w-20 object-contain" />
+          </div>
           <h1 className="page-title text-center">⚽ Futbolucja</h1>
           <p className="page-subtitle text-center mt-2">Zaloguj się do panelu trenera lub zawodnika</p>
         </div>

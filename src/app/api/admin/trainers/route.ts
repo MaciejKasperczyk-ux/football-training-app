@@ -10,6 +10,9 @@ const createTrainerSchema = z.object({
   email: z.string().email(),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
+  phone: z.string().min(1, "Telefon jest wymagany"),
+  club: z.string().min(1, "Klub jest wymagany"),
+  yearGroup: z.string().min(1, "Rocznik jest wymagany"),
 });
 
 function generateTemporaryPassword(): string {
@@ -22,7 +25,7 @@ export async function GET() {
 
   await dbConnect();
 
-  const trainers = await User.find({ role: "trainer" }).select("email name role createdAt").sort({ createdAt: -1 });
+  const trainers = await User.find({ role: "trainer" }).select("email name phone club yearGroup role createdAt").sort({ createdAt: -1 });
   return NextResponse.json(trainers);
 }
 
@@ -45,6 +48,9 @@ export async function POST(req: Request) {
   const created = await User.create({
     email: parsed.data.email,
     name: `${parsed.data.firstName} ${parsed.data.lastName}`,
+    phone: parsed.data.phone,
+    club: parsed.data.club,
+    yearGroup: parsed.data.yearGroup,
     role: "trainer",
     passwordHash: hash,
     hasPasswordChanged: false,
@@ -55,6 +61,9 @@ export async function POST(req: Request) {
       id: created._id,
       email: created.email,
       name: created.name,
+      phone: created.phone,
+      club: created.club,
+      yearGroup: created.yearGroup,
       role: created.role,
       temporaryPassword,
     },

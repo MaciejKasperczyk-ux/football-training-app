@@ -5,6 +5,9 @@ const UserSchema = new Schema(
   {
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     name: { type: String, required: true, trim: true },
+    phone: { type: String, required: false, trim: true },
+    club: { type: String, required: false, trim: true },
+    yearGroup: { type: String, required: false, trim: true },
     role: { type: String, enum: ["admin", "trainer", "viewer", "player"], default: "trainer" },
     playerId: { type: Schema.Types.ObjectId, ref: "Player", required: false, unique: true, sparse: true },
     passwordHash: { type: String, required: true },

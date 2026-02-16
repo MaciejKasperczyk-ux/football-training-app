@@ -1,6 +1,7 @@
-﻿import "./globals.css";
+import "./globals.css";
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { Providers } from "@/app/providers";
@@ -10,11 +11,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 export const metadata: Metadata = {
   title: "Trening indywidualny piłki nożnej",
   description: "Baza zawodników, cele i treningi",
-
-  // ---
-  // Stopka aplikacji
-  // Autor: maciej.kasperczyk.scriptify365@gmail.com
-  // ---
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -31,8 +27,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <div className="w-full px-4 md:px-6 lg:px-10">
                 <div className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <div className="flex items-center gap-2">
-                    <Link href="/" className="inline-flex items-center justify-center rounded-xl bg-white p-1 shadow-sm ring-1 ring-slate-200">
-                      <img src="/logo.png" alt="Logo Futbolucja" className="h-9 w-9 object-contain" />
+                    <Link href="/" className="inline-flex items-center justify-center rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-slate-200">
+                      <Image src="/logo.png" alt="Logo Futbolucja" width={56} height={56} className="h-14 w-14 object-contain" priority />
                     </Link>
                     <Link
                       href="/"
@@ -92,7 +88,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
           <main className="app-shell pb-24 md:pb-8">{children}</main>
           {session ? <MobileBottomNav role={role} /> : null}
-          <footer style={{textAlign: 'center', fontSize: '0.9em', color: '#888', marginTop: 32}}>
+          <footer style={{ textAlign: "center", fontSize: "0.9em", color: "#888", marginTop: 32 }}>
             © {new Date().getFullYear()} Maciej Kasperczyk &lt;maciej.kasperczyk.scriptify365@gmail.com&gt;
           </footer>
         </Providers>

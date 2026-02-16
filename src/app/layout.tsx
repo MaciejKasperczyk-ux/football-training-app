@@ -9,8 +9,8 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
-  title: "Trening indywidualny piłki nożnej",
-  description: "Baza zawodników, cele i treningi",
+  title: "Trening indywidualny piĹ‚ki noĹĽnej",
+  description: "Baza zawodnikĂłw, cele i treningi",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -30,12 +30,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     <Link href="/" className="inline-flex items-center justify-center rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-slate-200">
                       <Image src="/logo.png" alt="Logo Futbolucja" width={56} height={56} className="h-14 w-14 object-contain" priority />
                     </Link>
-                    <Link
-                      href="/"
-                      className="rounded-xl bg-gradient-to-br from-slate-900 to-slate-700 px-3 py-2 text-sm font-semibold text-white shadow-sm"
-                    >
-                      Trening indywidualny
-                    </Link>
                     <span className="hidden sm:inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs text-sky-900">
                       {role === "admin" ? "Panel admina" : role === "player" ? "Panel zawodnika" : "Panel trenera"}
                     </span>
@@ -45,10 +39,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     {role === "player" ? (
                       <>
                         <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href={playerId ? `/players/${playerId}` : "/"}>
-                          Mój profil
+                          MĂłj profil
                         </Link>
                         <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/change-password">
-                          Hasło
+                          HasĹ‚o
                         </Link>
                       </>
                     ) : (
@@ -60,7 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                           Treningi
                         </Link>
                         <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/skills">
-                          Umiejętności
+                          UmiejÄ™tnoĹ›ci
                         </Link>
                         <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/charts">
                           Wykresy
@@ -89,7 +83,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main className="app-shell pb-24 md:pb-8">{children}</main>
           {session ? <MobileBottomNav role={role} /> : null}
           <footer style={{ textAlign: "center", fontSize: "0.9em", color: "#888", marginTop: 32 }}>
-            © {new Date().getFullYear()} Maciej Kasperczyk &lt;maciej.kasperczyk.scriptify365@gmail.com&gt;
+            Â© {new Date().getFullYear()} Maciej Kasperczyk &lt;maciej.kasperczyk.scriptify365@gmail.com&gt;
           </footer>
         </Providers>
         <SpeedInsights />

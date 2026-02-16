@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { User } from "@/models/User";
 import { requireRoleApi } from "@/lib/auth";
+import { AGE_GROUP_OPTIONS, normalizeAgeGroup } from "@/lib/ageGroups";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
@@ -12,7 +13,7 @@ const createTrainerSchema = z.object({
   lastName: z.string().min(1),
   phone: z.string().min(1, "Telefon jest wymagany"),
   club: z.string().min(1, "Klub jest wymagany"),
-  yearGroup: z.string().min(1, "Rocznik jest wymagany"),
+  yearGroups: z.array(z.enum(AGE_GROUP_OPTIONS)).min(1, "Wybierz co najmniej jedna grupe"),
 });
 
 function generateTemporaryPassword(): string {
@@ -25,7 +26,7 @@ export async function GET() {
 
   await dbConnect();
 
-  const trainers = await User.find({ role: "trainer" }).select("email name phone club yearGroup role createdAt").sort({ createdAt: -1 });
+  const trainers = await User.find({ role: "trainer" }).select("email name phone club yearGroups yearGroup role createdAt").sort({ createdAt: -1 });
   return NextResponse.json(trainers);
 }
 
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const exists = await User.findOne({ email: parsed.data.email });
-  if (exists) return NextResponse.json({ error: "Trener już istnieje" }, { status: 409 });
+  if (exists) return NextResponse.json({ error: "Trener juĹĽ istnieje" }, { status: 409 });
 
   const temporaryPassword = generateTemporaryPassword();
   const hash = await bcrypt.hash(temporaryPassword, 10);
@@ -50,7 +51,8 @@ export async function POST(req: Request) {
     name: `${parsed.data.firstName} ${parsed.data.lastName}`,
     phone: parsed.data.phone,
     club: parsed.data.club,
-    yearGroup: parsed.data.yearGroup,
+    yearGroups: parsed.data.yearGroups,
+    yearGroup: parsed.data.yearGroups[0],
     role: "trainer",
     passwordHash: hash,
     hasPasswordChanged: false,
@@ -63,7 +65,9 @@ export async function POST(req: Request) {
       name: created.name,
       phone: created.phone,
       club: created.club,
-      yearGroup: created.yearGroup,
+      yearGroups: (created.yearGroups ?? [])
+        .map((value: unknown) => normalizeAgeGroup(String(value)))
+        .filter((value): value is string => Boolean(value)),
       role: created.role,
       temporaryPassword,
     },

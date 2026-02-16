@@ -7,6 +7,8 @@ const UserSchema = new Schema(
     name: { type: String, required: true, trim: true },
     phone: { type: String, required: false, trim: true },
     club: { type: String, required: false, trim: true },
+    yearGroups: [{ type: String, required: false, trim: true }],
+    // Legacy single-value field kept for backwards compatibility with older data.
     yearGroup: { type: String, required: false, trim: true },
     role: { type: String, enum: ["admin", "trainer", "viewer", "player"], default: "trainer" },
     playerId: { type: Schema.Types.ObjectId, ref: "Player", required: false, unique: true, sparse: true },

@@ -1,10 +1,11 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { dbConnect } from "@/lib/mongodb";
 import { Player } from "@/models/Player";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import DeletePlayerButton from "@/components/players/DeletePlayerButton";
 import { redirect } from "next/navigation";
+import { ageToGroup } from "@/lib/ageGroups";
 
 type PlayerListItem = {
   _id: unknown;
@@ -13,7 +14,22 @@ type PlayerListItem = {
   club?: string | null;
   position?: string | null;
   age?: number | null;
+  birthDate?: Date | string | null;
 };
+
+function calculateAgeFromBirthDate(value: Date | string | null | undefined): number | null {
+  if (!value) return null;
+  const birth = new Date(value);
+  if (Number.isNaN(birth.getTime())) return null;
+
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const monthDelta = now.getMonth() - birth.getMonth();
+  if (monthDelta < 0 || (monthDelta === 0 && now.getDate() < birth.getDate())) {
+    age -= 1;
+  }
+  return age >= 0 ? age : null;
+}
 
 export default async function PlayersPage() {
   const session = await getServerSession(authOptions);
@@ -47,9 +63,30 @@ export default async function PlayersPage() {
 
   const players = await Player.find().sort({ lastName: 1, firstName: 1 }).lean();
   const playersList = players as PlayerListItem[];
+  const playersWithMeta = playersList.map((player) => {
+    const effectiveAge = typeof player.age === "number" ? player.age : calculateAgeFromBirthDate(player.birthDate);
+    const group = ageToGroup(effectiveAge);
+    return { ...player, effectiveAge, group };
+  });
   const clubCount = new Set(playersList.map((player) => String(player.club ?? "").trim()).filter(Boolean)).size;
-  const knownAges = playersList.map((player) => player.age).filter((age) => typeof age === "number") as number[];
+  const knownAges = playersWithMeta
+    .map((player) => player.effectiveAge)
+    .filter((age): age is number => typeof age === "number");
   const avgAge = knownAges.length ? Math.round(knownAges.reduce((sum, age) => sum + age, 0) / knownAges.length) : null;
+  const groupedPlayers = new Map<string, typeof playersWithMeta>();
+
+  for (const player of playersWithMeta) {
+    const key = player.group ?? "Bez kategorii";
+    const groupValues = groupedPlayers.get(key) ?? [];
+    groupValues.push(player);
+    groupedPlayers.set(key, groupValues);
+  }
+
+  const sortedGroups = Array.from(groupedPlayers.entries()).sort(([a], [b]) => {
+    if (a === "Bez kategorii") return 1;
+    if (b === "Bez kategorii") return -1;
+    return Number(a.replace("U", "")) - Number(b.replace("U", ""));
+  });
 
   return (
     <div className="page-wrap">
@@ -72,46 +109,58 @@ export default async function PlayersPage() {
           <span className="pill">Zawodnicy: {playersList.length}</span>
           <span className="pill">Kluby: {clubCount}</span>
           <span className="pill">Sredni wiek: {avgAge ?? "-"}</span>
+          <span className="pill">Grupy U: {sortedGroups.filter(([group]) => group !== "Bez kategorii").length}</span>
         </div>
 
         {playersList.length === 0 ? (
           <div className="p-4 text-sm text-slate-600">Brak zawodnikow</div>
         ) : (
-          <div className="entity-grid">
-            {playersList.map((player) => (
-              <article key={String(player._id)} className="entity-card">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <Link className="entity-title" href={`/players/${String(player._id)}`}>
-                      {player.firstName} {player.lastName}
-                    </Link>
-                    <p className="entity-subtle">{player.club ?? "Brak klubu"}</p>
-                  </div>
-                  <span className="pill">{player.position ?? "Brak pozycji"}</span>
+          <div className="space-y-6">
+            {sortedGroups.map(([group, groupPlayers]) => (
+              <section key={group} className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="section-title">{group}</h2>
+                  <span className="pill">Zawodnicy: {groupPlayers.length}</span>
                 </div>
 
-                <div className="entity-metrics mt-4">
-                  <div>
-                    <div className="entity-label">Wiek</div>
-                    <div className="entity-value">{player.age ?? "-"}</div>
-                  </div>
-                  <div>
-                    <div className="entity-label">Pozycja</div>
-                    <div className="entity-value">{player.position ?? "-"}</div>
-                  </div>
-                  <div>
-                    <div className="entity-label">Klub</div>
-                    <div className="entity-value truncate">{player.club ?? "-"}</div>
-                  </div>
-                </div>
+                <div className="entity-grid">
+                  {groupPlayers.map((player) => (
+                    <article key={String(player._id)} className="entity-card">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <Link className="entity-title" href={`/players/${String(player._id)}`}>
+                            {player.firstName} {player.lastName}
+                          </Link>
+                          <p className="entity-subtle">{player.club ?? "Brak klubu"}</p>
+                        </div>
+                        <span className="pill">{player.position ?? "Brak pozycji"}</span>
+                      </div>
 
-                <div className="mt-4 flex flex-wrap justify-end gap-2">
-                  <Link className="btn btn-secondary" href={`/players/${String(player._id)}`}>
-                    Otwórz
-                  </Link>
-                  {role === "admin" || role === "trainer" ? <DeletePlayerButton playerId={String(player._id)} /> : null}
+                      <div className="entity-metrics mt-4">
+                        <div>
+                          <div className="entity-label">Wiek</div>
+                          <div className="entity-value">{player.effectiveAge ?? "-"}</div>
+                        </div>
+                        <div>
+                          <div className="entity-label">Pozycja</div>
+                          <div className="entity-value">{player.position ?? "-"}</div>
+                        </div>
+                        <div>
+                          <div className="entity-label">Klub</div>
+                          <div className="entity-value truncate">{player.club ?? "-"}</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap justify-end gap-2">
+                        <Link className="btn btn-secondary" href={`/players/${String(player._id)}`}>
+                          Otworz
+                        </Link>
+                        {role === "admin" || role === "trainer" ? <DeletePlayerButton playerId={String(player._id)} /> : null}
+                      </div>
+                    </article>
+                  ))}
                 </div>
-              </article>
+              </section>
             ))}
           </div>
         )}

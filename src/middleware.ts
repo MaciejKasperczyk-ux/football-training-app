@@ -10,6 +10,11 @@ const publicPaths = ["/login"];
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Allow static files from /public (e.g. /logo.png, /images/*) without auth.
+  if (pathname.includes(".") && !pathname.endsWith(".html")) {
+    return NextResponse.next();
+  }
+
   if (pathname.startsWith("/api")) {
     return NextResponse.next();
   }

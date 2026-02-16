@@ -27,6 +27,11 @@ type PlayerListItem = {
   trainers?: Array<TrainerRef | string>;
 };
 
+type TrainerLink = {
+  id: string;
+  label: string;
+};
+
 function calculateAgeFromBirthDate(value: Date | string | null | undefined): number | null {
   if (!value) return null;
   const birth = new Date(value);
@@ -46,7 +51,7 @@ function trainerDisplayName(value: TrainerRef | string): string {
   return value.name?.trim() || value.email?.trim() || String(value._id ?? "");
 }
 
-function trainerGroups(value: TrainerRef): string[] {
+function trainerGroups(value: TrainerRef): AgeGroup[] {
   const fromArray = Array.isArray(value.yearGroups)
     ? value.yearGroups.map((v) => normalizeAgeGroup(String(v))).filter((v): v is AgeGroup => v !== null)
     : [];
@@ -56,6 +61,14 @@ function trainerGroups(value: TrainerRef): string[] {
     if (one) return [one];
   }
   return [];
+}
+
+function toTrainerLink(value: TrainerRef | string): TrainerLink | null {
+  if (typeof value === "string") return null;
+  if (!value._id) return null;
+  const label = trainerDisplayName(value);
+  if (!label) return null;
+  return { id: String(value._id), label };
 }
 
 export default async function PlayersPage() {
@@ -93,14 +106,14 @@ export default async function PlayersPage() {
     User.find({ role: "trainer" }).select("name email yearGroups yearGroup").lean(),
   ]);
 
-  const groupTrainerMap = new Map<string, string[]>();
+  const groupTrainerMap = new Map<string, TrainerLink[]>();
   for (const trainerRaw of trainers as TrainerRef[]) {
-    const display = trainerDisplayName(trainerRaw);
-    if (!display) continue;
+    const link = toTrainerLink(trainerRaw);
+    if (!link) continue;
     const groups = trainerGroups(trainerRaw);
     for (const group of groups) {
       const current = groupTrainerMap.get(group) ?? [];
-      if (!current.includes(display)) current.push(display);
+      if (!current.some((entry) => entry.id === link.id)) current.push(link);
       groupTrainerMap.set(group, current);
     }
   }
@@ -109,16 +122,20 @@ export default async function PlayersPage() {
   const playersWithMeta = playersList.map((player) => {
     const effectiveAge = typeof player.age === "number" ? player.age : calculateAgeFromBirthDate(player.birthDate);
     const group = ageToGroup(effectiveAge);
-    const assignedTrainerNames = (player.trainers ?? []).map(trainerDisplayName).filter(Boolean);
-    const groupTrainerNames = group ? groupTrainerMap.get(group) ?? [] : [];
+
+    const assignedTrainerLinks = (player.trainers ?? [])
+      .map((value) => toTrainerLink(value))
+      .filter((value): value is TrainerLink => Boolean(value));
+
+    const groupTrainerLinks = group ? groupTrainerMap.get(group) ?? [] : [];
 
     return {
       ...player,
       effectiveAge,
       group,
-      assignedTrainerNames,
-      groupTrainerNames,
-      visibleTrainerNames: assignedTrainerNames.length ? assignedTrainerNames : groupTrainerNames,
+      assignedTrainerLinks,
+      groupTrainerLinks,
+      visibleTrainerLinks: assignedTrainerLinks.length ? assignedTrainerLinks : groupTrainerLinks,
     };
   });
 
@@ -150,7 +167,7 @@ export default async function PlayersPage() {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm text-slate-300">Baza zawodników i ich profile treningowe</div>
+        <div className="text-sm text-slate-600">Baza zawodników i ich profile treningowe</div>
         {role === "admin" || role === "trainer" ? (
           <Link className="btn btn-primary" href="/players/new">
             Dodaj zawodnika
@@ -167,7 +184,7 @@ export default async function PlayersPage() {
         </div>
 
         {playersList.length === 0 ? (
-          <div className="p-4 text-sm text-slate-300">Brak zawodników</div>
+          <div className="p-4 text-sm text-slate-600">Brak zawodników</div>
         ) : (
           <div className="space-y-6">
             {sortedGroups.map(([group, groupPlayers]) => {
@@ -179,8 +196,20 @@ export default async function PlayersPage() {
                     <span className="pill">Zawodnicy: {groupPlayers.length}</span>
                   </div>
 
-                  <div className="text-sm text-slate-300">
-                    Trenerzy grupy: {groupTrainers.length ? groupTrainers.join(", ") : "Brak trenera przypisanego do tej grupy"}
+                  <div className="text-sm text-slate-600">
+                    Trenerzy grupy:{" "}
+                    {groupTrainers.length ? (
+                      groupTrainers.map((trainer, index) => (
+                        <span key={trainer.id}>
+                          <Link className="font-medium text-sky-700 hover:text-sky-900 hover:underline" href={`/admin/trainers/${trainer.id}`}>
+                            {trainer.label}
+                          </Link>
+                          {index < groupTrainers.length - 1 ? ", " : ""}
+                        </span>
+                      ))
+                    ) : (
+                      "Brak trenera przypisanego do tej grupy"
+                    )}
                   </div>
 
                   <div className="entity-grid">
@@ -213,8 +242,17 @@ export default async function PlayersPage() {
 
                         <div className="mt-3">
                           <div className="entity-label">Trenerzy</div>
-                          <div className="mt-1 text-sm text-slate-200">
-                            {player.visibleTrainerNames.length ? player.visibleTrainerNames.join(", ") : "Brak przypisania"}
+                          <div className="mt-1 text-sm text-slate-700">
+                            {player.visibleTrainerLinks.length
+                              ? player.visibleTrainerLinks.map((trainer, index) => (
+                                  <span key={`${String(player._id)}-${trainer.id}`}>
+                                    <Link className="font-medium text-sky-700 hover:text-sky-900 hover:underline" href={`/admin/trainers/${trainer.id}`}>
+                                      {trainer.label}
+                                    </Link>
+                                    {index < player.visibleTrainerLinks.length - 1 ? ", " : ""}
+                                  </span>
+                                ))
+                              : "Brak przypisania"}
                           </div>
                         </div>
 

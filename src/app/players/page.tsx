@@ -7,6 +7,12 @@ import DeletePlayerButton from "@/components/players/DeletePlayerButton";
 import { redirect } from "next/navigation";
 import { ageToGroup } from "@/lib/ageGroups";
 
+type TrainerRef = {
+  _id?: unknown;
+  name?: string;
+  email?: string;
+};
+
 type PlayerListItem = {
   _id: unknown;
   firstName?: string;
@@ -15,6 +21,7 @@ type PlayerListItem = {
   position?: string | null;
   age?: number | null;
   birthDate?: Date | string | null;
+  trainers?: Array<TrainerRef | string>;
 };
 
 function calculateAgeFromBirthDate(value: Date | string | null | undefined): number | null {
@@ -29,6 +36,11 @@ function calculateAgeFromBirthDate(value: Date | string | null | undefined): num
     age -= 1;
   }
   return age >= 0 ? age : null;
+}
+
+function trainerDisplayName(value: TrainerRef | string): string {
+  if (typeof value === "string") return value;
+  return value.name?.trim() || value.email?.trim() || String(value._id ?? "");
 }
 
 export default async function PlayersPage() {
@@ -61,13 +73,19 @@ export default async function PlayersPage() {
     );
   }
 
-  const players = await Player.find().sort({ lastName: 1, firstName: 1 }).lean();
+  const players = await Player.find()
+    .populate("trainers", "name email")
+    .sort({ lastName: 1, firstName: 1 })
+    .lean();
+
   const playersList = players as PlayerListItem[];
   const playersWithMeta = playersList.map((player) => {
     const effectiveAge = typeof player.age === "number" ? player.age : calculateAgeFromBirthDate(player.birthDate);
     const group = ageToGroup(effectiveAge);
-    return { ...player, effectiveAge, group };
+    const trainerNames = (player.trainers ?? []).map(trainerDisplayName).filter(Boolean);
+    return { ...player, effectiveAge, group, trainerNames };
   });
+
   const clubCount = new Set(playersList.map((player) => String(player.club ?? "").trim()).filter(Boolean)).size;
   const knownAges = playersWithMeta
     .map((player) => player.effectiveAge)
@@ -92,11 +110,11 @@ export default async function PlayersPage() {
     <div className="page-wrap">
       <div className="hero-card">
         <h1 className="page-title">Zawodnicy</h1>
-        <p className="page-subtitle">Baza zawodnikow, profile i szybkie przejscie do planu rozwoju.</p>
+        <p className="page-subtitle">Baza zawodników, profile i szybkie przejście do planu rozwoju.</p>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm text-slate-600">Baza zawodnikow i ich profile treningowe</div>
+        <div className="text-sm text-slate-600">Baza zawodników i ich profile treningowe</div>
         {role === "admin" || role === "trainer" ? (
           <Link className="btn btn-primary" href="/players/new">
             Dodaj zawodnika
@@ -108,12 +126,12 @@ export default async function PlayersPage() {
         <div className="entity-stats">
           <span className="pill">Zawodnicy: {playersList.length}</span>
           <span className="pill">Kluby: {clubCount}</span>
-          <span className="pill">Sredni wiek: {avgAge ?? "-"}</span>
+          <span className="pill">Średni wiek: {avgAge ?? "-"}</span>
           <span className="pill">Grupy U: {sortedGroups.filter(([group]) => group !== "Bez kategorii").length}</span>
         </div>
 
         {playersList.length === 0 ? (
-          <div className="p-4 text-sm text-slate-600">Brak zawodnikow</div>
+          <div className="p-4 text-sm text-slate-600">Brak zawodników</div>
         ) : (
           <div className="space-y-6">
             {sortedGroups.map(([group, groupPlayers]) => (
@@ -151,9 +169,14 @@ export default async function PlayersPage() {
                         </div>
                       </div>
 
+                      <div className="mt-3">
+                        <div className="entity-label">Trenerzy</div>
+                        <div className="mt-1 text-sm text-slate-700">{player.trainerNames.length ? player.trainerNames.join(", ") : "Brak przypisania"}</div>
+                      </div>
+
                       <div className="mt-4 flex flex-wrap justify-end gap-2">
                         <Link className="btn btn-secondary" href={`/players/${String(player._id)}`}>
-                          Otworz
+                          Otwórz
                         </Link>
                         {role === "admin" || role === "trainer" ? <DeletePlayerButton playerId={String(player._id)} /> : null}
                       </div>

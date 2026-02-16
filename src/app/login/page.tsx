@@ -38,11 +38,16 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="hero-card mb-6">
-          <div className="flex justify-center">
-            <div className="rounded-2xl bg-white/95 p-4 shadow-md ring-1 ring-slate-200">
-              <Image src="/logo.png" alt="Logo Futbolucja" width={168} height={168} className="h-36 w-36 object-contain" priority />
-            </div>
+        <div className="hero-card mb-6 p-0 overflow-hidden">
+          <div className="relative h-56 w-full">
+            <Image
+              src="/logo.png"
+              alt="Logo Futbolucja"
+              fill
+              sizes="(max-width: 768px) 100vw, 448px"
+              className="object-contain p-4"
+              priority
+            />
           </div>
         </div>
 

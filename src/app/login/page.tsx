@@ -1,10 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -18,11 +20,18 @@ export default function LoginPage() {
     const res = await signIn("credentials", {
       email,
       password,
-      redirect: true,
+      redirect: false,
       callbackUrl: "/",
     });
 
-    if (res?.error) setError("Błędne dane logowania");
+    if (!res || res.error) {
+      setError("Nie udalo sie zalogowac. Sprawdz e-mail i haslo.");
+      setLoading(false);
+      return;
+    }
+
+    router.push(res.url || "/");
+    router.refresh();
     setLoading(false);
   }
 
@@ -35,8 +44,7 @@ export default function LoginPage() {
               <Image src="/logo.png" alt="Logo Futbolucja" width={112} height={112} className="h-24 w-24 object-contain" priority />
             </div>
           </div>
-          <h1 className="page-title text-center">⚽ Futbolucja</h1>
-          <p className="page-subtitle text-center mt-2">Zaloguj się do panelu trenera lub zawodnika</p>
+          <h1 className="page-title text-center">Futbolucja</h1>
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-8 border border-slate-100">
@@ -55,35 +63,33 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700">Hasło</label>
+              <label className="block text-sm font-semibold text-slate-700">Haslo</label>
               <input
                 className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 type="password"
-                placeholder="Wpisz swoje hasło"
+                placeholder="Wpisz swoje haslo"
                 autoComplete="current-password"
                 required
               />
             </div>
 
-            {error && (
+            {error ? (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-sm font-semibold text-red-800">Błąd logowania</p>
+                <p className="text-sm font-semibold text-red-800">Blad logowania</p>
                 <p className="text-sm text-red-700 mt-0.5">{error}</p>
               </div>
-            )}
+            ) : null}
 
             <button
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-400 disabled:to-slate-500 text-white font-semibold py-3 rounded-lg transition duration-200 flex items-center justify-center gap-2 mt-6"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-400 disabled:to-slate-500 text-white font-semibold py-3 rounded-lg transition duration-200 flex items-center justify-center mt-6"
               type="submit"
             >
-              {loading ? "Logowanie..." : "Zaloguj się"}
+              {loading ? "Logowanie..." : "Zaloguj sie"}
             </button>
           </form>
-
-          <p className="text-center text-xs text-slate-500 mt-6">Hasło jest bezpiecznie przechowywane.</p>
         </div>
       </div>
     </div>

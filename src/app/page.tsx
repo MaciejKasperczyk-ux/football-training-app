@@ -7,6 +7,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { redirect } from "next/navigation";
 
+function Icon({ children, className = "h-5 w-5" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className} aria-hidden>
+      {children}
+    </svg>
+  );
+}
+
 function startOfToday() {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
@@ -128,7 +136,16 @@ export default async function DashboardPage() {
               <div className="mt-2 text-3xl font-bold text-slate-900">{playersCount}</div>
               <div className="mt-2 text-xs text-slate-500">W bazie danych</div>
             </div>
-            <div className="rounded-lg bg-blue-100 p-3 text-xl">👥</div>
+            <div className="rounded-lg bg-blue-100 p-3 text-blue-700">
+              <Icon>
+                <path d="M16 19a4 4 0 0 0-8 0" />
+                <circle cx="12" cy="11" r="3.25" />
+                <path d="M7.5 19a3 3 0 0 0-3-3" />
+                <circle cx="6.5" cy="12" r="2.25" />
+                <path d="M16.5 19a3 3 0 0 1 3-3" />
+                <circle cx="17.5" cy="12" r="2.25" />
+              </Icon>
+            </div>
           </div>
           <Link className="mt-4 inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100 transition-colors" href="/players">
             Przejdź do listy
@@ -143,7 +160,13 @@ export default async function DashboardPage() {
               <div className="mt-2 text-3xl font-bold text-slate-900">{trainingsCount}</div>
               <div className="mt-2 text-xs text-slate-500">Ostatnie 7 dni: {trainingsLast7}</div>
             </div>
-            <div className="rounded-lg bg-orange-100 p-3 text-xl">⚽</div>
+            <div className="rounded-lg bg-orange-100 p-3 text-orange-700">
+              <Icon>
+                <circle cx="12" cy="12" r="6.5" />
+                <path d="M12 5.5v13" />
+                <path d="M5.5 12h13" />
+              </Icon>
+            </div>
           </div>
           <Link className="mt-4 inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100 transition-colors" href="/trainings">
             Wszystkie treningi
@@ -160,8 +183,19 @@ export default async function DashboardPage() {
               </div>
               <div className="mt-2 text-xs text-slate-500">Wymagają uwagi</div>
             </div>
-            <div className={`rounded-lg p-3 text-xl ${goalsOverdue > 0 ? "bg-red-100" : "bg-green-100"}`}>
-              {goalsOverdue > 0 ? "⚠️" : "✅"}
+            <div className={`rounded-lg p-3 ${goalsOverdue > 0 ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+              {goalsOverdue > 0 ? (
+                <Icon>
+                  <path d="m12 4 8 14H4l8-14Z" />
+                  <path d="M12 9v4" />
+                  <circle cx="12" cy="15.5" r="0.8" fill="currentColor" stroke="none" />
+                </Icon>
+              ) : (
+                <Icon>
+                  <circle cx="12" cy="12" r="8" />
+                  <path d="m8.5 12.5 2.4 2.4 4.6-5.1" />
+                </Icon>
+              )}
             </div>
           </div>
           <Link className="mt-4 inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100 transition-colors" href="/players">
@@ -174,13 +208,31 @@ export default async function DashboardPage() {
           <div className="text-sm font-medium text-slate-600 mb-4">Szybkie akcje</div>
           <div className="space-y-2">
             <Link className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 transition-colors border border-slate-200" href="/players/new">
-              <span>➕</span> Nowy zawodnik
+              <span className="text-slate-700">
+                <Icon className="h-4 w-4">
+                  <path d="M12 5v14" />
+                  <path d="M5 12h14" />
+                </Icon>
+              </span>
+              Nowy zawodnik
             </Link>
             <Link className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 transition-colors border border-slate-200" href="/trainings/new">
-              <span>📋</span> Nowy trening
+              <span className="text-slate-700">
+                <Icon className="h-4 w-4">
+                  <rect x="6.5" y="5.5" width="11" height="13" rx="1.5" />
+                  <path d="M9 9.5h6" />
+                  <path d="M9 12.5h6" />
+                </Icon>
+              </span>
+              Nowy trening
             </Link>
             <Link className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 transition-colors border border-slate-200" href="/skills">
-              <span>⭐</span> Umiejętności
+              <span className="text-slate-700">
+                <Icon className="h-4 w-4">
+                  <path d="m12 4 2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7L12 4Z" />
+                </Icon>
+              </span>
+              Umiejętności
             </Link>
           </div>
         </div>
@@ -191,14 +243,30 @@ export default async function DashboardPage() {
         {/* Upcoming Goals */}
         <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
           <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-6 py-5">
-            <div className="text-lg font-bold text-slate-900">📅 Najbliższe cele</div>
+            <div className="flex items-center gap-2 text-lg font-bold text-slate-900">
+              <span className="text-slate-600">
+                <Icon>
+                  <rect x="4.5" y="6.5" width="15" height="12" rx="2" />
+                  <path d="M8 4.5v4" />
+                  <path d="M16 4.5v4" />
+                  <path d="M4.5 10.5h15" />
+                </Icon>
+              </span>
+              Najbliższe cele
+            </div>
             <div className="mt-1 text-sm text-slate-600">Terminy w ciągu 14 dni</div>
           </div>
 
           <div className="p-6">
             {goalsNext14.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="text-4xl mb-2">🎯</div>
+                <div className="mb-2 text-slate-400">
+                  <Icon className="h-9 w-9">
+                    <circle cx="12" cy="12" r="7.5" />
+                    <circle cx="12" cy="12" r="4.2" />
+                    <circle cx="12" cy="12" r="1.8" />
+                  </Icon>
+                </div>
                 <div className="text-sm text-slate-600">Brak celów z terminem w najbliższych 14 dniach</div>
               </div>
             ) : (
@@ -216,7 +284,12 @@ export default async function DashboardPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="text-lg">→</div>
+                    <div className="text-slate-400 group-hover:text-blue-600">
+                      <Icon className="h-5 w-5">
+                        <path d="M5 12h12" />
+                        <path d="m13 7 5 5-5 5" />
+                      </Icon>
+                    </div>
                   </Link>
                 ))}
               </div>
@@ -227,14 +300,29 @@ export default async function DashboardPage() {
         {/* Recent Players */}
         <div className="rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
           <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-6 py-5">
-            <div className="text-lg font-bold text-slate-900">⭐ Zawodnicy</div>
+            <div className="flex items-center gap-2 text-lg font-bold text-slate-900">
+              <span className="text-slate-600">
+                <Icon>
+                  <path d="M16 19a4 4 0 0 0-8 0" />
+                  <circle cx="12" cy="11" r="3.25" />
+                </Icon>
+              </span>
+              Zawodnicy
+            </div>
             <div className="mt-1 text-sm text-slate-600">Szybki dostęp</div>
           </div>
 
           <div className="p-6">
             {players.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="text-4xl mb-2">👥</div>
+                <div className="mb-2 text-slate-400">
+                  <Icon className="h-9 w-9">
+                    <path d="M16 19a4 4 0 0 0-8 0" />
+                    <circle cx="12" cy="11" r="3.25" />
+                    <path d="M7.5 18.5a3 3 0 0 0-3-2.8" />
+                    <circle cx="6.5" cy="12.5" r="2.1" />
+                  </Icon>
+                </div>
                 <div className="text-sm text-slate-600">Brak zawodników w bazie</div>
               </div>
             ) : (
@@ -250,7 +338,12 @@ export default async function DashboardPage() {
                         {p.position ? ` • ${p.position}` : ""}
                       </div>
                     </div>
-                    <div className="text-lg text-slate-400 group-hover:text-blue-600">→</div>
+                    <div className="text-slate-400 group-hover:text-blue-600">
+                      <Icon className="h-5 w-5">
+                        <path d="M5 12h12" />
+                        <path d="m13 7 5 5-5 5" />
+                      </Icon>
+                    </div>
                   </Link>
                 ))}
 

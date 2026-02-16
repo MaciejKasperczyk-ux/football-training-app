@@ -39,12 +39,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="hero-card mb-6">
-          <div className="mb-4 flex justify-center">
-            <div className="rounded-2xl bg-white/95 p-3 shadow-md ring-1 ring-slate-200">
-              <Image src="/logo.png" alt="Logo Futbolucja" width={112} height={112} className="h-24 w-24 object-contain" priority />
+          <div className="flex justify-center">
+            <div className="rounded-2xl bg-white/95 p-4 shadow-md ring-1 ring-slate-200">
+              <Image src="/logo.png" alt="Logo Futbolucja" width={168} height={168} className="h-36 w-36 object-contain" priority />
             </div>
           </div>
-          <h1 className="page-title text-center">Futbolucja</h1>
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-8 border border-slate-100">

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { User } from "@/models/User";
 import { requireRoleApi } from "@/lib/auth";
-import { AGE_GROUP_OPTIONS, normalizeAgeGroup } from "@/lib/ageGroups";
+import { AGE_GROUP_OPTIONS, normalizeAgeGroup, type AgeGroup } from "@/lib/ageGroups";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
@@ -65,9 +65,9 @@ export async function POST(req: Request) {
       name: created.name,
       phone: created.phone,
       club: created.club,
-      yearGroups: (created.yearGroups ?? [])
-        .map((value: unknown) => normalizeAgeGroup(String(value)))
-        .filter((value): value is string => Boolean(value)),
+      yearGroups: ((created.yearGroups ?? []) as unknown[])
+        .map((value) => normalizeAgeGroup(String(value)))
+        .filter((value): value is AgeGroup => value !== null),
       role: created.role,
       temporaryPassword,
     },

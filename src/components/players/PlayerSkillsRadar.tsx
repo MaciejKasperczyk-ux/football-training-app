@@ -25,6 +25,11 @@ function labelAnchor(angleRad: number) {
   return "middle";
 }
 
+function shortLabel(name: string, max = 18) {
+  if (name.length <= max) return name;
+  return `${name.slice(0, max - 1)}...`;
+}
+
 export default function PlayerSkillsRadar({ data }: { data: SkillProgressPoint[] }) {
   if (data.length === 0) {
     return (
@@ -35,17 +40,17 @@ export default function PlayerSkillsRadar({ data }: { data: SkillProgressPoint[]
     );
   }
 
-  const size = 420;
+  const size = 520;
   const cx = size / 2;
   const cy = size / 2;
-  const radius = 140;
+  const radius = 170;
   const levels = 5;
   const step = (Math.PI * 2) / data.length;
 
   const axes = data.map((_, idx) => {
     const angle = -Math.PI / 2 + idx * step;
     const outer = polarToCartesian(cx, cy, radius, angle);
-    const label = polarToCartesian(cx, cy, radius + 24, angle);
+    const label = polarToCartesian(cx, cy, radius + 30, angle);
     return { angle, outer, label };
   });
 
@@ -69,7 +74,7 @@ export default function PlayerSkillsRadar({ data }: { data: SkillProgressPoint[]
       <p className="section-copy">Kazda os to glowna umiejetnosc. Wynik liczony jest jako opanowane podumiejetnosci / wszystkie podumiejetnosci.</p>
 
       <div className="mt-4 overflow-x-auto">
-        <svg viewBox={`0 0 ${size} ${size}`} className="mx-auto h-[430px] min-w-[420px] max-w-full">
+        <svg viewBox={`0 0 ${size} ${size}`} className="mx-auto h-[500px] min-w-[520px] max-w-full">
           {gridPolygons.map((poly, idx) => (
             <polygon
               key={idx}
@@ -110,21 +115,22 @@ export default function PlayerSkillsRadar({ data }: { data: SkillProgressPoint[]
               key={data[idx].id}
               x={axis.label.x}
               y={axis.label.y}
-              fontSize="12"
+              fontSize="11"
               fill="#0f172a"
               textAnchor={labelAnchor(axis.angle)}
               dominantBaseline="middle"
             >
-              {data[idx].name}
+              {`${idx + 1}. ${shortLabel(data[idx].name)}`}
+              <title>{data[idx].name}</title>
             </text>
           ))}
         </svg>
       </div>
 
       <div className="mt-3 grid gap-2">
-        {data.map((point) => (
+        {data.map((point, idx) => (
           <div key={point.id} className="surface-muted flex items-center justify-between px-3 py-2 text-sm">
-            <span className="font-medium">{point.name}</span>
+            <span className="font-medium">{idx + 1}. {point.name}</span>
             <div className="flex items-center gap-2">
               <span className="pill">{point.done}/{point.total}</span>
               <span className="pill">{Math.round(point.ratio * 100)}%</span>

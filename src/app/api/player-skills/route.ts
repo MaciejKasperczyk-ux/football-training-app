@@ -4,6 +4,8 @@ import { requireRoleApi } from "@/lib/auth";
 import { PlayerSkill } from "@/models/PlayerSkill";
 import { z } from "zod";
 
+type SessionUser = { role?: "admin" | "trainer" | "viewer" | "player"; playerId?: string | null };
+
 const createSchema = z.object({
   playerId: z.string().min(1),
   skillId: z.string().min(1),
@@ -22,8 +24,9 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   let playerId = searchParams.get("playerId");
-  const role = (auth.session?.user as any)?.role;
-  const ownPlayerId = (auth.session?.user as any)?.playerId;
+  const user = (auth.session?.user as SessionUser | undefined) ?? undefined;
+  const role = user?.role;
+  const ownPlayerId = user?.playerId;
 
   if (role === "player") {
     if (!ownPlayerId) return NextResponse.json([], { status: 200 });
@@ -49,15 +52,22 @@ export async function POST(req: Request) {
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const created = await PlayerSkill.create({
-    playerId: parsed.data.playerId,
-    skillId: parsed.data.skillId,
-    detailId: parsed.data.detailId,
-    plannedDate: parsed.data.plannedDate ? new Date(parsed.data.plannedDate) : undefined,
-    doneDate: parsed.data.doneDate ? new Date(parsed.data.doneDate) : undefined,
-    status: parsed.data.status ?? "plan",
-    notes: parsed.data.notes,
-  });
+  const upserted = await PlayerSkill.findOneAndUpdate(
+    {
+      playerId: parsed.data.playerId,
+      skillId: parsed.data.skillId,
+      detailId: parsed.data.detailId ?? null,
+    },
+    {
+      $set: {
+        plannedDate: parsed.data.plannedDate ? new Date(parsed.data.plannedDate) : undefined,
+        doneDate: parsed.data.doneDate ? new Date(parsed.data.doneDate) : parsed.data.status === "zrobione" ? undefined : null,
+        status: parsed.data.status ?? "plan",
+        notes: parsed.data.notes,
+      },
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
 
-  return NextResponse.json(created, { status: 201 });
+  return NextResponse.json(upserted, { status: 201 });
 }

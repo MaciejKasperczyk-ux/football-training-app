@@ -1,8 +1,11 @@
 ﻿import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { Goal } from "@/models/Goal";
+import { PlayerSkill } from "@/models/PlayerSkill";
 import { requireRoleApi } from "@/lib/auth";
 import { z } from "zod";
+
+type SessionUser = { role?: "admin" | "trainer" | "viewer" | "player"; playerId?: string | null; id?: string };
 
 const goalCreateSchema = z.object({
   playerId: z.string().min(1),
@@ -23,8 +26,9 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   let playerId = searchParams.get("playerId");
   const status = searchParams.get("status");
-  const role = (auth.session?.user as any)?.role;
-  const ownPlayerId = (auth.session?.user as any)?.playerId;
+  const user = (auth.session?.user as SessionUser | undefined) ?? undefined;
+  const role = user?.role;
+  const ownPlayerId = user?.playerId;
 
   if (role === "player") {
     if (!ownPlayerId) return NextResponse.json([], { status: 200 });
@@ -45,6 +49,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const auth = await requireRoleApi(["admin", "trainer"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+  const user = (auth.session?.user as SessionUser | undefined) ?? undefined;
 
   await dbConnect();
 
@@ -62,8 +67,33 @@ export async function POST(req: Request) {
     status: parsed.data.status ?? "planned",
     skillId: parsed.data.skillId,
     detailId: parsed.data.detailId,
-    createdByUserId: (auth.session?.user as any)?.id ?? undefined,
+    createdByUserId: user?.id ?? undefined,
   });
+
+  if (created.skillId) {
+    const mappedStatus =
+      created.status === "done"
+        ? "zrobione"
+        : created.status === "in_progress"
+          ? "w_trakcie"
+          : "plan";
+
+    await PlayerSkill.findOneAndUpdate(
+      {
+        playerId: created.playerId,
+        skillId: created.skillId,
+        detailId: created.detailId ?? null,
+      },
+      {
+        $set: {
+          status: mappedStatus,
+          doneDate: created.status === "done" ? new Date() : null,
+          notes: `Cel: ${created.title}`,
+        },
+      },
+      { upsert: true, new: true }
+    );
+  }
 
   return NextResponse.json(created, { status: 201 });
 }

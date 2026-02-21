@@ -1,16 +1,12 @@
-// Fix 2: Next.js 16.1 expects a real middleware function (the next-auth/middleware default export approach is no longer accepted)
-// Replace src/middleware.ts with this
-
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 const publicPaths = ["/login"];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow static files from /public (e.g. /logo.png, /images/*) without auth.
   if (pathname.includes(".") && !pathname.endsWith(".html")) {
     return NextResponse.next();
   }

@@ -78,6 +78,10 @@ export default function AdminUsersPage() {
     }
   }
 
+  function downloadExport(dataset: "players" | "trainings" | "skills" | "goals" | "player-skills") {
+    window.open(`/api/admin/exports?dataset=${dataset}`, "_blank");
+  }
+
   return (
     <div className="page-wrap max-w-6xl">
       <div className="hero-card">
@@ -225,6 +229,28 @@ export default function AdminUsersPage() {
               {JSON.stringify(toolsResult, null, 2)}
             </pre>
           ) : null}
+
+          <div className="mt-5 border-t border-slate-200 pt-4">
+            <div className="text-sm font-semibold text-slate-800">Eksport do Excela (CSV)</div>
+            <p className="mt-1 text-xs text-slate-600">Pliki CSV mozna od razu otworzyc w Excelu.</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <button type="button" className="btn btn-secondary" onClick={() => downloadExport("players")}>
+                Pobierz zawodnikow
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={() => downloadExport("trainings")}>
+                Pobierz treningi
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={() => downloadExport("skills")}>
+                Pobierz umiejetnosci
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={() => downloadExport("goals")}>
+                Pobierz cele
+              </button>
+              <button type="button" className="btn btn-secondary sm:col-span-2" onClick={() => downloadExport("player-skills")}>
+                Pobierz postepy umiejetnosci zawodnikow
+              </button>
+            </div>
+          </div>
         </section>
       </div>
     </div>

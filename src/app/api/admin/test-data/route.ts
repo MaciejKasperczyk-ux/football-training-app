@@ -122,7 +122,7 @@ export async function POST(req: Request) {
 
       const player = await Player.create({
         firstName: pickOne(firstNames),
-        lastName: `${pickOne(lastNames)}-${randInt(10, 99)}`,
+        lastName: pickOne(lastNames),
         age,
         birthDate: randomBirthDate(age),
         club: pickOne(clubs),

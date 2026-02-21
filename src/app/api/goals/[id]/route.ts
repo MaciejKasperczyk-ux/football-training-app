@@ -1,11 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { Goal } from "@/models/Goal";
+import { PlayerSkill } from "@/models/PlayerSkill";
 import { requireRoleApi } from "@/lib/auth";
 import { Types } from "mongoose";
 import { z } from "zod";
 
 type Ctx = { params: Promise<{ id: string }> };
+type SessionUser = { role?: "admin" | "trainer" | "viewer" | "player"; playerId?: string | null };
 
 const updateSchema = z.object({
   title: z.string().min(1).optional(),
@@ -25,8 +27,9 @@ export async function GET(_: NextRequest, { params }: Ctx) {
   const goal = await Goal.findById(id);
   if (!goal) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const role = (auth.session?.user as any)?.role;
-  const ownPlayerId = (auth.session?.user as any)?.playerId;
+  const user = (auth.session?.user as SessionUser | undefined) ?? undefined;
+  const role = user?.role;
+  const ownPlayerId = user?.playerId;
   if (role === "player" && String(goal.playerId) !== String(ownPlayerId ?? "")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -54,6 +57,33 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
 
   const goal = await Goal.findByIdAndUpdate(id, update, { new: true });
   if (!goal) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Keep player's sub-skill progress in sync with goal status.
+  if (parsed.data.status && goal.skillId) {
+    const mappedStatus =
+      parsed.data.status === "done"
+        ? "zrobione"
+        : parsed.data.status === "in_progress"
+          ? "w_trakcie"
+          : "plan";
+
+    await PlayerSkill.findOneAndUpdate(
+      {
+        playerId: goal.playerId,
+        skillId: goal.skillId,
+        detailId: goal.detailId ?? null,
+      },
+      {
+        $set: {
+          status: mappedStatus,
+          doneDate: parsed.data.status === "done" ? new Date() : null,
+          notes: `Aktualizacja z celu: ${goal.title}`,
+        },
+      },
+      { upsert: true, new: true }
+    );
+  }
+
   return NextResponse.json(goal);
 }
 

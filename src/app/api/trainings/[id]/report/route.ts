@@ -54,7 +54,7 @@ export async function POST(req: Request, { params }: Ctx) {
       // mark as in progress
       const updated = await PlayerSkill.findOneAndUpdate(
         { playerId: r.playerId, skillId: r.skillId, detailId: r.detailId ?? null },
-        { $set: { status: "w_trakcie", notes: r.notes ?? undefined } },
+        { $set: { status: "w_trakcie", doneDate: null, notes: r.notes ?? undefined } },
         { upsert: true, new: true }
       );
       results.push({ playerId: r.playerId, skillId: r.skillId, ok: true, updated: String(updated._id) });

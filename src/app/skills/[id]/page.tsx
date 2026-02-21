@@ -63,6 +63,9 @@ export default async function SkillDetailsPage({ params }: PageProps) {
 
   const skill = doc as SkillItem;
   const details = skill.details ?? [];
+  const p1 = details.filter((detail) => (detail.difficulty ?? 1) === 1);
+  const p2 = details.filter((detail) => detail.difficulty === 2);
+  const p3 = details.filter((detail) => detail.difficulty === 3);
   const role = (session.user as { role?: string } | undefined)?.role;
 
   return (
@@ -95,19 +98,42 @@ export default async function SkillDetailsPage({ params }: PageProps) {
         {details.length === 0 ? (
           <div className="text-sm text-slate-600">Ta umiejetnosc nie ma jeszcze podumiejetnosci.</div>
         ) : (
-          <div className="grid gap-2">
-            {details.map((detail) => (
-              <div key={String(detail._id)} className="surface-muted p-3">
-                <div className="flex items-center gap-2">
-                  <div className="text-sm font-semibold text-slate-800">{detail.name}</div>
-                  <span className="pill">P{detail.difficulty ?? 1}</span>
-                </div>
-                {detail.description ? <div className="mt-1 text-sm text-slate-600">{detail.description}</div> : null}
-              </div>
-            ))}
+          <div className="grid gap-4">
+            <DifficultySection title="Poziom 1" badgeClass="border-emerald-200 bg-emerald-50 text-emerald-800" details={p1} />
+            <DifficultySection title="Poziom 2" badgeClass="border-sky-200 bg-sky-50 text-sky-800" details={p2} />
+            <DifficultySection title="Poziom 3" badgeClass="border-orange-200 bg-orange-50 text-orange-800" details={p3} />
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function DifficultySection({
+  title,
+  details,
+  badgeClass,
+}: {
+  title: string;
+  details: SubSkillItem[];
+  badgeClass: string;
+}) {
+  if (details.length === 0) return null;
+
+  return (
+    <section>
+      <div className="mb-2 flex items-center gap-2">
+        <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${badgeClass}`}>{title}</span>
+        <span className="text-xs text-slate-500">{details.length} podumiejetnosci</span>
+      </div>
+      <div className="grid gap-2">
+        {details.map((detail) => (
+          <div key={String(detail._id)} className="surface-muted p-3">
+            <div className="text-sm font-semibold text-slate-800">{detail.name}</div>
+            {detail.description ? <div className="mt-1 text-sm text-slate-600">{detail.description}</div> : null}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

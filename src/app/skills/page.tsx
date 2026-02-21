@@ -4,10 +4,16 @@ import { Skill } from "@/models/Skill";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 
+type SubSkillListItem = {
+  _id: unknown;
+  name: string;
+  difficulty?: 1 | 2 | 3;
+};
+
 type SkillListItem = {
   _id: unknown;
   name: string;
-  details?: unknown[];
+  details?: SubSkillListItem[];
 };
 
 export default async function SkillsPage() {
@@ -27,7 +33,6 @@ export default async function SkillsPage() {
   await dbConnect();
   const skills = await Skill.find().populate("details").sort({ name: 1 }).lean();
   const skillsList = skills as SkillListItem[];
-  const maxDetails = Math.max(1, ...skillsList.map((skill) => skill.details?.length ?? 0));
   const role = (session.user as { role?: string } | undefined)?.role;
 
   return (
@@ -50,7 +55,9 @@ export default async function SkillsPage() {
       <div className="surface p-3 md:p-4">
         <div className="entity-stats">
           <span className="pill">Umiejetnosci: {skillsList.length}</span>
-          <span className="pill">Max podumiejetnosci: {maxDetails}</span>
+          <span className="pill">
+            Podumiejetnosci: {skillsList.reduce((acc, skill) => acc + (skill.details?.length ?? 0), 0)}
+          </span>
         </div>
 
         {skillsList.length === 0 ? (
@@ -59,7 +66,10 @@ export default async function SkillsPage() {
           <div className="entity-grid">
             {skillsList.map((skill) => {
               const detailCount = skill.details?.length ?? 0;
-              const meter = Math.round((detailCount / maxDetails) * 100);
+              const p1 = (skill.details ?? []).filter((detail) => (detail.difficulty ?? 1) === 1).length;
+              const p2 = (skill.details ?? []).filter((detail) => detail.difficulty === 2).length;
+              const p3 = (skill.details ?? []).filter((detail) => detail.difficulty === 3).length;
+              const preview = (skill.details ?? []).slice(0, 3).map((detail) => detail.name);
 
               return (
                 <article key={String(skill._id)} className="entity-card">
@@ -68,14 +78,20 @@ export default async function SkillsPage() {
                     <span className="pill">{detailCount} podum.</span>
                   </div>
 
-                  <div className="mt-4">
-                    <div className="mb-1.5 flex items-center justify-between text-xs text-slate-500">
-                      <span>Zakres cwiczen</span>
-                      <span>{meter}%</span>
-                    </div>
-                    <div className="entity-meter">
-                      <span style={{ width: `${meter}%` }} />
-                    </div>
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-800">
+                      P1: {p1}
+                    </span>
+                    <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 font-semibold text-sky-800">
+                      P2: {p2}
+                    </span>
+                    <span className="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 font-semibold text-orange-800">
+                      P3: {p3}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 text-sm text-slate-600">
+                    {preview.length > 0 ? `${preview.join(", ")}${detailCount > 3 ? "..." : ""}` : "Brak podumiejetnosci"}
                   </div>
 
                   <div className="mt-4 flex justify-end">

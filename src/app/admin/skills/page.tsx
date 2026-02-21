@@ -41,6 +41,7 @@ export default function AdminSkillsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editSelectedSubIds, setEditSelectedSubIds] = useState<string[]>([]);
+  const [editSubQuery, setEditSubQuery] = useState("");
 
   const filteredSubskills = useMemo(
     () => subskills.filter((s) => s.name.toLowerCase().includes(subQuery.toLowerCase())),
@@ -187,6 +188,7 @@ export default function AdminSkillsPage() {
     setEditingId(skill._id);
     setEditName(skill.name);
     setEditSelectedSubIds((skill.details || []).map((detail) => detail._id));
+    setEditSubQuery("");
   }
 
   function toggleEditSelect(id: string) {
@@ -224,6 +226,20 @@ export default function AdminSkillsPage() {
     if (value === 3) return "bg-orange-100 text-orange-800 border-orange-200";
     return "bg-emerald-100 text-emerald-800 border-emerald-200";
   }
+
+  function groupByDifficulty(details: SubSkill[] = []) {
+    return {
+      p1: details.filter((d) => (d.difficulty ?? 1) === 1),
+      p2: details.filter((d) => d.difficulty === 2),
+      p3: details.filter((d) => d.difficulty === 3),
+    };
+  }
+
+  const filteredEditSubskills = useMemo(() => {
+    const query = editSubQuery.trim().toLowerCase();
+    if (!query) return subskills;
+    return subskills.filter((sub) => sub.name.toLowerCase().includes(query));
+  }, [subskills, editSubQuery]);
 
   return (
     <div className="page-wrap">
@@ -397,7 +413,40 @@ export default function AdminSkillsPage() {
                   <span className="pill">{skill.details?.length ?? 0} podum.</span>
                 </div>
 
-                <div className="mt-3 text-sm text-slate-600">{(skill.details || []).map((detail) => detail.name).join(", ") || "Brak podumiejetnosci"}</div>
+                {(() => {
+                  const groups = groupByDifficulty(skill.details || []);
+                  return (
+                    <div className="mt-3 grid gap-2 text-xs">
+                      <div>
+                        <span className="mr-2 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-800">
+                          P1: {groups.p1.length}
+                        </span>
+                        <span className="text-slate-600">
+                          {groups.p1.slice(0, 3).map((d) => d.name).join(", ")}
+                          {groups.p1.length > 3 ? "..." : ""}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="mr-2 inline-flex rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 font-semibold text-sky-800">
+                          P2: {groups.p2.length}
+                        </span>
+                        <span className="text-slate-600">
+                          {groups.p2.slice(0, 3).map((d) => d.name).join(", ")}
+                          {groups.p2.length > 3 ? "..." : ""}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="mr-2 inline-flex rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 font-semibold text-orange-800">
+                          P3: {groups.p3.length}
+                        </span>
+                        <span className="text-slate-600">
+                          {groups.p3.slice(0, 3).map((d) => d.name).join(", ")}
+                          {groups.p3.length > 3 ? "..." : ""}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div className="mt-4 flex flex-wrap justify-end gap-2">
                   <button onClick={() => startEdit(skill)} className="btn btn-secondary">
@@ -411,9 +460,15 @@ export default function AdminSkillsPage() {
                 {editingId === skill._id ? (
                   <form onSubmit={saveEdit} className="mt-4 space-y-3 border-t border-slate-200 pt-3">
                     <input className="field-input" value={editName} onChange={(event) => setEditName(event.target.value)} required />
+                    <input
+                      className="field-input"
+                      value={editSubQuery}
+                      onChange={(event) => setEditSubQuery(event.target.value)}
+                      placeholder="Filtruj podumiejetnosci w edycji..."
+                    />
                     <div className="max-h-44 overflow-auto rounded-xl border border-slate-200 bg-white p-2">
                       <div className="grid gap-1.5">
-                        {subskills.map((sub) => (
+                        {filteredEditSubskills.map((sub) => (
                           <label key={sub._id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50">
                             <input type="checkbox" checked={editSelectedSubIds.includes(sub._id)} onChange={() => toggleEditSelect(sub._id)} />
                             <span>{sub.name}</span>

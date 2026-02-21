@@ -6,6 +6,7 @@ type SubSkill = {
   _id: string;
   name: string;
   description?: string;
+  difficulty?: 1 | 2 | 3;
 };
 
 type Skill = {
@@ -29,6 +30,7 @@ export default function AdminSkillsPage() {
 
   const [subName, setSubName] = useState("");
   const [subDesc, setSubDesc] = useState("");
+  const [subDifficulty, setSubDifficulty] = useState<1 | 2 | 3>(1);
   const [creatingSub, setCreatingSub] = useState(false);
   const [showAllSubs, setShowAllSubs] = useState(false);
 
@@ -92,7 +94,7 @@ export default function AdminSkillsPage() {
       const res = await fetch("/api/subskills", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: subName, description: subDesc }),
+        body: JSON.stringify({ name: subName, description: subDesc, difficulty: subDifficulty }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
@@ -102,6 +104,7 @@ export default function AdminSkillsPage() {
 
       setSubName("");
       setSubDesc("");
+      setSubDifficulty(1);
       await fetchAll();
     } catch {
       setError("Blad tworzenia podumiejetnosci.");
@@ -216,6 +219,12 @@ export default function AdminSkillsPage() {
     }
   }
 
+  function difficultyBadgeClass(value?: number) {
+    if (value === 2) return "bg-sky-100 text-sky-800 border-sky-200";
+    if (value === 3) return "bg-orange-100 text-orange-800 border-orange-200";
+    return "bg-emerald-100 text-emerald-800 border-emerald-200";
+  }
+
   return (
     <div className="page-wrap">
       <div className="hero-card">
@@ -249,6 +258,15 @@ export default function AdminSkillsPage() {
                 onChange={(event) => setSubDesc(event.target.value)}
                 placeholder="Opis (opcjonalnie)"
               />
+              <select
+                className="field-select"
+                value={subDifficulty}
+                onChange={(event) => setSubDifficulty(Number(event.target.value) as 1 | 2 | 3)}
+              >
+                <option value={1}>Poziom 1</option>
+                <option value={2}>Poziom 2</option>
+                <option value={3}>Poziom 3</option>
+              </select>
               <div className="flex justify-end">
                 <button className="btn btn-primary" disabled={creatingSub}>
                   {creatingSub ? "Tworzenie..." : "Utworz podumiejetnosc"}
@@ -272,7 +290,12 @@ export default function AdminSkillsPage() {
                   {(showAllSubs ? filteredSubskills : filteredSubskills.slice(0, 8)).map((sub) => (
                     <div key={sub._id} className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
                       <div>
-                        <div className="text-sm font-semibold text-slate-800">{sub.name}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-semibold text-slate-800">{sub.name}</div>
+                          <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${difficultyBadgeClass(sub.difficulty)}`}>
+                            P{sub.difficulty ?? 1}
+                          </span>
+                        </div>
                         {sub.description ? <div className="text-xs text-slate-500">{sub.description}</div> : null}
                       </div>
                       <button onClick={() => deleteSub(sub._id)} className="btn btn-danger">
@@ -321,6 +344,9 @@ export default function AdminSkillsPage() {
                         <label key={sub._id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50">
                           <input type="checkbox" checked={selectedSubIds.includes(sub._id)} onChange={() => toggleSelect(sub._id)} />
                           <span>{sub.name}</span>
+                          <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${difficultyBadgeClass(sub.difficulty)}`}>
+                            P{sub.difficulty ?? 1}
+                          </span>
                         </label>
                       ))}
                     </div>
@@ -391,6 +417,9 @@ export default function AdminSkillsPage() {
                           <label key={sub._id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50">
                             <input type="checkbox" checked={editSelectedSubIds.includes(sub._id)} onChange={() => toggleEditSelect(sub._id)} />
                             <span>{sub.name}</span>
+                            <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${difficultyBadgeClass(sub.difficulty)}`}>
+                              P{sub.difficulty ?? 1}
+                            </span>
                           </label>
                         ))}
                       </div>

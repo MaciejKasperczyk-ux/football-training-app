@@ -6,7 +6,7 @@ type Skill = {
   _id: string;
   name: string;
   category?: string;
-  details?: { _id: string; name: string }[];
+  details?: { _id: string; name: string; difficulty?: 1 | 2 | 3 }[];
 };
 
 type PlayerSkill = {
@@ -166,7 +166,7 @@ export default function PlayerSkillsManager({ playerId, canManage = true }: { pl
                           : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 hover:border-blue-300"
                       }`}
                     >
-                      {detailId === d._id ? "✓ " : ""}{d.name}
+                      {detailId === d._id ? "✓ " : ""}[P{d.difficulty ?? 1}] {d.name}
                     </button>
                   ))}
                 </div>

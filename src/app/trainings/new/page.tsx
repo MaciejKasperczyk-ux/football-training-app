@@ -11,7 +11,7 @@ type Player = {
   position?: string;
 };
 
-type Skill = { _id: string; name: string; details: { _id: string; name: string }[] };
+type Skill = { _id: string; name: string; details: { _id: string; name: string; difficulty?: 1 | 2 | 3 }[] };
 type Trainer = { _id: string; name?: string; email?: string };
 
 type Entry = {
@@ -352,7 +352,7 @@ export default function NewTrainingPage() {
                         <option value="">Brak</option>
                         {getDetails(entry.skillId).map((detail) => (
                           <option key={detail._id} value={detail._id}>
-                            {detail.name}
+                            {`[P${detail.difficulty ?? 1}] ${detail.name}`}
                           </option>
                         ))}
                       </select>

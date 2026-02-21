@@ -11,6 +11,7 @@ type SubSkillItem = {
   _id: unknown;
   name: string;
   description?: string | null;
+  difficulty?: 1 | 2 | 3;
 };
 
 type SkillItem = {
@@ -97,7 +98,10 @@ export default async function SkillDetailsPage({ params }: PageProps) {
           <div className="grid gap-2">
             {details.map((detail) => (
               <div key={String(detail._id)} className="surface-muted p-3">
-                <div className="text-sm font-semibold text-slate-800">{detail.name}</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-semibold text-slate-800">{detail.name}</div>
+                  <span className="pill">P{detail.difficulty ?? 1}</span>
+                </div>
                 {detail.description ? <div className="mt-1 text-sm text-slate-600">{detail.description}</div> : null}
               </div>
             ))}

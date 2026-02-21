@@ -48,6 +48,14 @@ function randomPastDate(daysBack = 60) {
   return d;
 }
 
+function randomBirthDate(age: number) {
+  const now = new Date();
+  const year = now.getFullYear() - age;
+  const month = randInt(0, 11);
+  const day = randInt(1, 28);
+  return new Date(year, month, day);
+}
+
 export async function POST(req: Request) {
   const auth = await requireRoleApi(["admin"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
@@ -103,43 +111,55 @@ export async function POST(req: Request) {
     const createdPlayers = [];
     let createdSkillLinks = 0;
     let createdGoals = 0;
+    const trainers = await User.find({ role: { $in: ["admin", "trainer"] } }, { _id: 1 }).lean();
 
     for (let i = 0; i < count; i += 1) {
+      const age = randInt(10, 18);
+      const assignedTrainerIds =
+        trainers.length > 0
+          ? pickMany(trainers, randInt(1, Math.min(2, trainers.length))).map((trainer) => trainer._id)
+          : [];
+
       const player = await Player.create({
         firstName: pickOne(firstNames),
         lastName: `${pickOne(lastNames)}-${randInt(10, 99)}`,
-        age: randInt(10, 18),
+        age,
+        birthDate: randomBirthDate(age),
         club: pickOne(clubs),
         position: pickOne(positions),
         dominantFoot: pickOne(feet),
+        trainers: assignedTrainerIds,
         isActive: true,
       });
 
       createdPlayers.push(player);
 
-      const chosenSkills = pickMany(skills, randInt(2, Math.min(5, skills.length)));
+      const chosenSkills = pickMany(skills, randInt(Math.min(4, skills.length), Math.min(9, skills.length)));
       for (const skill of chosenSkills) {
         const details = skill.details ?? [];
-        const chosenDetail = details.length > 0 && Math.random() > 0.2 ? pickOne(details) : null;
-        const status = Math.random() > 0.65 ? "zrobione" : "w_trakcie";
+        const detailCount = details.length > 0 ? randInt(1, Math.min(3, details.length)) : 0;
+        const chosenDetails = detailCount > 0 ? pickMany(details, detailCount) : [];
 
-        await PlayerSkill.findOneAndUpdate(
-          {
-            playerId: player._id,
-            skillId: skill._id,
-            detailId: chosenDetail?._id ?? null,
-          },
-          {
-            $set: {
-              status,
-              plannedDate: randomPastDate(20),
-              doneDate: status === "zrobione" ? randomPastDate(10) : undefined,
-              notes: "Wygenerowane automatycznie (test data)",
+        for (const detail of chosenDetails) {
+          const status = Math.random() > 0.45 ? "zrobione" : "w_trakcie";
+          await PlayerSkill.findOneAndUpdate(
+            {
+              playerId: player._id,
+              skillId: skill._id,
+              detailId: detail._id,
             },
-          },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-        createdSkillLinks += 1;
+            {
+              $set: {
+                status,
+                plannedDate: randomPastDate(30),
+                doneDate: status === "zrobione" ? randomPastDate(15) : undefined,
+                notes: "Wygenerowane automatycznie (test data)",
+              },
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          );
+          createdSkillLinks += 1;
+        }
       }
 
       const goalSkill = pickOne(skills);
@@ -179,9 +199,9 @@ export async function POST(req: Request) {
   let createdTrainings = 0;
   let touchedPlayerSkills = 0;
 
-  for (let i = 0; i < count; i += 1) {
-    const selectedPlayers = pickMany(players, randInt(1, Math.min(8, players.length)));
-    const selectedSkills = pickMany(skills, randInt(1, Math.min(4, skills.length)));
+    for (let i = 0; i < count; i += 1) {
+      const selectedPlayers = pickMany(players, randInt(1, Math.min(8, players.length)));
+      const selectedSkills = pickMany(skills, randInt(2, Math.min(6, skills.length)));
     const entries = selectedSkills.map((skill) => {
       const details = skill.details ?? [];
       const chosenDetail = details.length > 0 && Math.random() > 0.15 ? pickOne(details) : null;
@@ -207,7 +227,7 @@ export async function POST(req: Request) {
 
     for (const player of selectedPlayers) {
       for (const entry of entries) {
-        if (Math.random() < 0.45) continue;
+        if (Math.random() < 0.2) continue;
         const finalStatus = Math.random() > 0.5 ? "zrobione" : "w_trakcie";
         await PlayerSkill.findOneAndUpdate(
           {

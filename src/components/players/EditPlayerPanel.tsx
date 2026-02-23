@@ -5,6 +5,7 @@ import PhotoUpload from "./PhotoUpload";
 
 type Trainer = { _id: string; name?: string; email?: string };
 type PlayerTrainerRef = string | { _id?: string };
+type CoachNote = { text: string; createdAt?: string | Date | null };
 type EditablePlayer = {
   firstName?: string | null;
   lastName?: string | null;
@@ -15,6 +16,7 @@ type EditablePlayer = {
   trainers?: PlayerTrainerRef[];
   photo?: string | null;
   notes?: string | null;
+  coachNotes?: CoachNote[] | null;
 };
 
 function calculateAge(value?: string) {
@@ -36,6 +38,14 @@ export default function EditPlayerPanel({ player, playerId }: { player: Editable
   const [birthDate, setBirthDate] = useState<string>(player.birthDate ? String(new Date(player.birthDate).toISOString().slice(0, 10)) : "");
   const [dominantFoot, setDominantFoot] = useState<string>(player.dominantFoot || "");
   const [privateNotes, setPrivateNotes] = useState<string>(player.notes || "");
+  const [coachNotes, setCoachNotes] = useState<CoachNote[]>(
+    [...(player.coachNotes || [])].sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    })
+  );
+  const [newCoachNote, setNewCoachNote] = useState("");
   const [trainers, setTrainers] = useState<string[]>(
     (player.trainers || []).map((t) => String(typeof t === "string" ? t : t._id || ""))
   );
@@ -56,7 +66,7 @@ export default function EditPlayerPanel({ player, playerId }: { player: Editable
     fetchTrainers();
   }, []);
 
-  async function persist(nextTrainers: string[]) {
+  async function persist(nextTrainers: string[], nextCoachNotes: CoachNote[] = coachNotes) {
     const payload = {
       firstName,
       lastName,
@@ -65,6 +75,10 @@ export default function EditPlayerPanel({ player, playerId }: { player: Editable
       birthDate: birthDate || undefined,
       dominantFoot: dominantFoot || undefined,
       notes: privateNotes.trim() ? privateNotes : undefined,
+      coachNotes: nextCoachNotes.map((note) => ({
+        text: note.text,
+        createdAt: note.createdAt ? new Date(note.createdAt).toISOString() : new Date().toISOString(),
+      })),
       trainers: nextTrainers,
     };
 
@@ -113,6 +127,21 @@ export default function EditPlayerPanel({ player, playerId }: { player: Editable
     setLoading(false);
     if (!ok) return;
     setTrainers(next);
+  }
+
+  async function addCoachNote() {
+    const text = newCoachNote.trim();
+    if (!text) return;
+
+    const nextNotes: CoachNote[] = [{ text, createdAt: new Date().toISOString() }, ...coachNotes];
+    setLoading(true);
+    setError(null);
+    const ok = await persist(trainers, nextNotes);
+    setLoading(false);
+    if (!ok) return;
+
+    setCoachNotes(nextNotes);
+    setNewCoachNote("");
   }
 
   return (
@@ -258,6 +287,46 @@ export default function EditPlayerPanel({ player, playerId }: { player: Editable
           </div>
         </div>
       )}
+      </div>
+
+      <div className="surface p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="section-title">Notatki trenerskie</h2>
+            <p className="section-copy">Widoczne tylko dla trenera i admina. Kazda notatka ma date dodania.</p>
+          </div>
+          <span className="pill">{coachNotes.length} notatek</span>
+        </div>
+
+        <div className="mt-4 grid gap-2">
+          <label className="field-label">Dodaj nowa notatke</label>
+          <textarea
+            className="field-textarea min-h-24"
+            value={newCoachNote}
+            onChange={(e) => setNewCoachNote(e.target.value)}
+            placeholder="Np. obserwacja z meczu, zachowanie, priorytet na kolejny tydzien..."
+          />
+          <div className="flex justify-end">
+            <button onClick={addCoachNote} disabled={loading || !newCoachNote.trim()} className="btn btn-primary">
+              {loading ? "Zapisywanie..." : "Dodaj notatke"}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3">
+          {coachNotes.length === 0 ? (
+            <div className="surface-muted p-3 text-sm text-slate-600">Brak notatek trenerskich.</div>
+          ) : (
+            coachNotes.map((note, index) => (
+              <div key={`${note.createdAt ?? "note"}-${index}`} className="surface-muted p-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Dodano: {note.createdAt ? new Date(note.createdAt).toLocaleString("pl-PL") : "-"}
+                </div>
+                <div className="mt-1 whitespace-pre-wrap text-sm text-slate-800">{note.text}</div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

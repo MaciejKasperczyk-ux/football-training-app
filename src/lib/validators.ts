@@ -17,6 +17,14 @@ export const playerSchema = z.object({
   position: z.string().optional(),
   dominantFoot: z.enum(["left", "right", "both"]).optional(),
   notes: z.string().optional(),
+  coachNotes: z
+    .array(
+      z.object({
+        text: z.string().min(1),
+        createdAt: z.string().optional(),
+      })
+    )
+    .optional(),
   isActive: z.boolean().optional(),
   trainers: z.array(z.string().min(1)).optional(),
 });

@@ -21,6 +21,7 @@ export async function GET(_: Request, { params }: Ctx) {
   if (role === "player") {
     const safeDoc = doc.toObject();
     delete safeDoc.notes;
+    delete safeDoc.coachNotes;
     return NextResponse.json(safeDoc);
   }
 

@@ -1,6 +1,14 @@
 // src/models/Player.ts
 import { Schema, model, models } from "mongoose";
 
+const CoachNoteSchema = new Schema(
+  {
+    text: { type: String, required: true, trim: true },
+    createdAt: { type: Date, required: true, default: Date.now },
+  },
+  { _id: true }
+);
+
 const PlayerSchema = new Schema(
   {
     firstName: { type: String, required: true, trim: true },
@@ -11,6 +19,7 @@ const PlayerSchema = new Schema(
     position: { type: String, required: false, trim: true },
     dominantFoot: { type: String, enum: ["left", "right", "both"], required: false },
     notes: { type: String, required: false },
+    coachNotes: { type: [CoachNoteSchema], default: [] },
     photo: { type: String, required: false },
     isActive: { type: Boolean, default: true },
     trainers: [{ type: Schema.Types.ObjectId, ref: "User" }],

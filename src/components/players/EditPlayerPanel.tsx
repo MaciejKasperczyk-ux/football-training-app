@@ -43,7 +43,7 @@ export default function EditPlayerPanel({ player, playerId }: { player: Editable
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedToAdd, setSelectedToAdd] = useState("");
-  const [photo, setPhoto] = useState(player.photo);
+  const [photo, setPhoto] = useState<string | undefined>(player.photo ?? undefined);
 
   useEffect(() => {
     async function fetchTrainers() {
@@ -120,7 +120,7 @@ export default function EditPlayerPanel({ player, playerId }: { player: Editable
       {/* Photo Upload Section */}
       <PhotoUpload 
         playerId={playerId} 
-        currentPhoto={photo}
+        currentPhoto={photo ?? undefined}
         onPhotoUpdate={(photoUrl) => setPhoto(photoUrl)}
       />
 

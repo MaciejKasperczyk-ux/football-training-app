@@ -38,7 +38,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="hero-card mb-6 p-0 overflow-hidden">
+        <div className="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-stone-100 p-0 shadow-[0_12px_35px_rgba(15,23,42,0.08)]">
           <div className="relative h-56 w-full">
             <Image
               src="/logo.png"

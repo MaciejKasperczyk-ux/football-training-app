@@ -7,7 +7,7 @@ import { PlayerSkill } from "@/models/PlayerSkill";
 import { Skill } from "@/models/Skill";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { canAccessPlayer } from "@/lib/auth";
+import { canAccessPlayer, type AppRole } from "@/lib/auth";
 import DeletePlayerButton from "@/components/players/DeletePlayerButton";
 import EditPlayerPanel from "@/components/players/EditPlayerPanel";
 import PlayerSkillsManager from "@/components/players/PlayerSkillsManager";
@@ -18,7 +18,7 @@ import PlayerAccountPanel from "@/components/players/PlayerAccountPanel";
 type PageProps = { params: Promise<{ id: string }> };
 type SkillItem = { _id: unknown; name: string; details?: unknown[] };
 type PlayerSkillItem = { skillId: unknown; detailId?: unknown | null; status?: string };
-type SessionUser = { role?: string; playerId?: string | null } & Record<string, unknown>;
+type SessionUser = { role?: AppRole; playerId?: string | null } & Record<string, unknown>;
 type PlayerProfile = {
   _id: unknown;
   firstName: string;

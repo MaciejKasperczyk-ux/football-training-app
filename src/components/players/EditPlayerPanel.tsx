@@ -6,15 +6,15 @@ import PhotoUpload from "./PhotoUpload";
 type Trainer = { _id: string; name?: string; email?: string };
 type PlayerTrainerRef = string | { _id?: string };
 type EditablePlayer = {
-  firstName?: string;
-  lastName?: string;
-  club?: string;
-  position?: string;
-  birthDate?: string | Date;
-  dominantFoot?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  club?: string | null;
+  position?: string | null;
+  birthDate?: string | Date | null;
+  dominantFoot?: string | null;
   trainers?: PlayerTrainerRef[];
-  photo?: string;
-  notes?: string;
+  photo?: string | null;
+  notes?: string | null;
 };
 
 function calculateAge(value?: string) {

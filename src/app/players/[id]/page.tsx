@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { dbConnect } from "@/lib/mongodb";
 import { Player } from "@/models/Player";
@@ -17,10 +18,12 @@ import PlayerAccountPanel from "@/components/players/PlayerAccountPanel";
 type PageProps = { params: Promise<{ id: string }> };
 type SkillItem = { _id: unknown; name: string; details?: unknown[] };
 type PlayerSkillItem = { skillId: unknown; detailId?: unknown | null; status?: string };
+type SessionUser = { role?: string; playerId?: string | null } & Record<string, unknown>;
 type PlayerProfile = {
   _id: unknown;
   firstName: string;
   lastName: string;
+  photo?: string | null;
   birthDate?: Date | string | null;
   age?: number | null;
   club?: string | null;
@@ -46,6 +49,18 @@ function ageFromBirthDate(birthDate?: Date | string | null) {
   return age;
 }
 
+function dominantFootLabel(value?: string | null) {
+  if (!value) return "-";
+  if (value === "left") return "Lewa";
+  if (value === "right") return "Prawa";
+  if (value === "both") return "Obie";
+  return value;
+}
+
+function initials(firstName?: string, lastName?: string) {
+  return `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase() || "Z";
+}
+
 export default async function PlayerPage({ params }: PageProps) {
   const { id } = await params;
 
@@ -62,9 +77,10 @@ export default async function PlayerPage({ params }: PageProps) {
     );
   }
 
-  const role = (session.user as { role?: string; playerId?: string | null } | undefined)?.role;
+  const sessionUser = session.user as SessionUser;
+  const role = sessionUser.role;
   const canManage = role === "admin" || role === "trainer";
-  if (!canAccessPlayer(session.user as any, id)) {
+  if (!canAccessPlayer(sessionUser, id)) {
     return (
       <div className="surface p-6">
         <div className="page-title">Profil zawodnika</div>
@@ -126,23 +142,83 @@ export default async function PlayerPage({ params }: PageProps) {
       score: ratio * 5,
     };
   });
+  const trainingsList = trainings as TrainingItem[];
+  const totalTrainingMinutes = trainingsList.reduce((sum, training) => sum + (training.durationMinutes ?? 0), 0);
+  const overallSkillRatio = skillProgress.length > 0 ? skillProgress.reduce((sum, skill) => sum + skill.ratio, 0) / skillProgress.length : 0;
+  const completedSkills = skillProgress.filter((skill) => skill.ratio >= 1).length;
+  const recentTraining = trainingsList[0];
+  const playerInitials = initials(player.firstName, player.lastName);
+  const dominantFoot = dominantFootLabel(playerProfile.dominantFoot);
 
   return (
     <div className="page-wrap">
       <div className="hero-card">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="page-title">{player.firstName} {player.lastName}</h1>
-            <p className="page-subtitle">Profil zawodnika, historia treningow i plan rozwoju.</p>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/20 bg-white/10 shadow-lg sm:h-24 sm:w-24">
+              {playerProfile.photo ? (
+                <Image
+                  src={playerProfile.photo}
+                  alt={`Zdjecie ${player.firstName} ${player.lastName}`}
+                  fill
+                  className="object-cover"
+                  sizes="96px"
+                  unoptimized
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-cyan-300/40 to-blue-400/30 text-2xl font-bold text-white">
+                  {playerInitials}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-cyan-100">
+                  PLAYER PROFILE
+                </span>
+                {playerProfile.position ? <span className="pill border-white/20 bg-white/10 text-slate-100">{playerProfile.position}</span> : null}
+                {playerProfile.club ? <span className="pill border-white/20 bg-white/10 text-slate-100">{playerProfile.club}</span> : null}
+              </div>
+              <h1 className="page-title">{player.firstName} {player.lastName}</h1>
+              <p className="page-subtitle">Profil zawodnika, historia treningow i plan rozwoju.</p>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-100">
+                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">Wiek: {age ?? "-"}</span>
+                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">Lepsza noga: {dominantFoot}</span>
+                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">
+                  Ostatni trening: {recentTraining ? new Date(recentTraining.date).toLocaleDateString("pl-PL") : "Brak"}
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="grid min-w-[220px] gap-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl border border-white/15 bg-white/10 p-3">
+                <div className="text-[11px] uppercase tracking-wide text-cyan-100/80">Treningi</div>
+                <div className="mt-1 text-xl font-semibold text-white">{trainingsList.length}</div>
+              </div>
+              <div className="rounded-xl border border-white/15 bg-white/10 p-3">
+                <div className="text-[11px] uppercase tracking-wide text-cyan-100/80">Minuty</div>
+                <div className="mt-1 text-xl font-semibold text-white">{totalTrainingMinutes}</div>
+              </div>
+              <div className="rounded-xl border border-white/15 bg-white/10 p-3">
+                <div className="text-[11px] uppercase tracking-wide text-cyan-100/80">Umiejetnosci</div>
+                <div className="mt-1 text-xl font-semibold text-white">{Math.round(overallSkillRatio * 100)}%</div>
+              </div>
+              <div className="rounded-xl border border-white/15 bg-white/10 p-3">
+                <div className="text-[11px] uppercase tracking-wide text-cyan-100/80">Zakonczone</div>
+                <div className="mt-1 text-xl font-semibold text-white">{completedSkills}/{skillProgress.length}</div>
+              </div>
+            </div>
+
             {canManage ? (
-              <>
+              <div className="flex flex-wrap justify-end gap-2 pt-1">
                 <Link className="btn btn-secondary" href="/players">
                   Wroc do listy
                 </Link>
                 <DeletePlayerButton playerId={String(playerProfile._id)} />
-              </>
+              </div>
             ) : null}
           </div>
         </div>
@@ -190,12 +266,61 @@ export default async function PlayerPage({ params }: PageProps) {
           {role === "admin" ? <PlayerAccountPanel playerId={String(playerProfile._id)} playerName={`${player.firstName} ${player.lastName}`} /> : null}
 
           <div className="surface p-5">
-            <h2 className="section-title">Podsumowanie</h2>
-            <div className="mt-3 grid gap-2 text-sm">
-              <div>Klub: <span className="font-medium">{playerProfile.club || "-"}</span></div>
-              <div>Pozycja: <span className="font-medium">{playerProfile.position || "-"}</span></div>
-              <div>Wiek: <span className="font-medium">{age ?? "-"}</span></div>
-              <div>Lepsza noga: <span className="font-medium">{playerProfile.dominantFoot || "-"}</span></div>
+            <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-cyan-50/60 p-4">
+              <div className="flex items-center gap-3">
+                <div className="relative h-14 w-14 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                  {playerProfile.photo ? (
+                    <Image
+                      src={playerProfile.photo}
+                      alt={`Avatar ${player.firstName} ${player.lastName}`}
+                      fill
+                      className="object-cover"
+                      sizes="56px"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sky-200 to-blue-200 text-sm font-bold text-slate-700">
+                      {playerInitials}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h2 className="section-title">Karta zawodnika</h2>
+                  <p className="section-copy">Szybki podglad danych i postepu.</p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-2 text-sm">
+                <div className="surface-muted flex items-center justify-between px-3 py-2">
+                  <span className="text-slate-600">Klub</span>
+                  <span className="font-semibold text-slate-900">{playerProfile.club || "-"}</span>
+                </div>
+                <div className="surface-muted flex items-center justify-between px-3 py-2">
+                  <span className="text-slate-600">Pozycja</span>
+                  <span className="font-semibold text-slate-900">{playerProfile.position || "-"}</span>
+                </div>
+                <div className="surface-muted flex items-center justify-between px-3 py-2">
+                  <span className="text-slate-600">Wiek</span>
+                  <span className="font-semibold text-slate-900">{age ?? "-"}</span>
+                </div>
+                <div className="surface-muted flex items-center justify-between px-3 py-2">
+                  <span className="text-slate-600">Lepsza noga</span>
+                  <span className="font-semibold text-slate-900">{dominantFoot}</span>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <span>Sredni postep umiejetnosci</span>
+                  <span>{Math.round(overallSkillRatio * 100)}%</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 transition-all"
+                    style={{ width: `${Math.round(overallSkillRatio * 100)}%` }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

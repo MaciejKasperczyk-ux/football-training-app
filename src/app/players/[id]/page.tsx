@@ -143,9 +143,9 @@ export default async function PlayerPage({ params }: PageProps) {
     };
   });
   const trainingsList = trainings as TrainingItem[];
-  const totalTrainingMinutes = trainingsList.reduce((sum, training) => sum + (training.durationMinutes ?? 0), 0);
   const overallSkillRatio = skillProgress.length > 0 ? skillProgress.reduce((sum, skill) => sum + skill.ratio, 0) / skillProgress.length : 0;
   const completedSkills = skillProgress.filter((skill) => skill.ratio >= 1).length;
+  const completedTrainings = trainingsList.filter((training) => (training.entries?.length ?? 0) > 0).length;
   const recentTraining = trainingsList[0];
   const playerInitials = initials(player.firstName, player.lastName);
   const dominantFoot = dominantFootLabel(playerProfile.dominantFoot);
@@ -199,15 +199,15 @@ export default async function PlayerPage({ params }: PageProps) {
                 <div className="mt-1 text-xl font-semibold text-white">{trainingsList.length}</div>
               </div>
               <div className="rounded-xl border border-white/15 bg-white/10 p-3">
-                <div className="text-[11px] uppercase tracking-wide text-cyan-100/80">Minuty</div>
-                <div className="mt-1 text-xl font-semibold text-white">{totalTrainingMinutes}</div>
+                <div className="text-[11px] uppercase tracking-wide text-cyan-100/80">Zakonczone treningi</div>
+                <div className="mt-1 text-xl font-semibold text-white">{completedTrainings}</div>
               </div>
               <div className="rounded-xl border border-white/15 bg-white/10 p-3">
                 <div className="text-[11px] uppercase tracking-wide text-cyan-100/80">Umiejetnosci</div>
                 <div className="mt-1 text-xl font-semibold text-white">{Math.round(overallSkillRatio * 100)}%</div>
               </div>
               <div className="rounded-xl border border-white/15 bg-white/10 p-3">
-                <div className="text-[11px] uppercase tracking-wide text-cyan-100/80">Zakonczone</div>
+                <div className="text-[11px] uppercase tracking-wide text-cyan-100/80">Zakonczone umiejetnosci</div>
                 <div className="mt-1 text-xl font-semibold text-white">{completedSkills}/{skillProgress.length}</div>
               </div>
             </div>

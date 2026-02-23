@@ -4,6 +4,18 @@ import { useEffect, useState } from "react";
 import PhotoUpload from "./PhotoUpload";
 
 type Trainer = { _id: string; name?: string; email?: string };
+type PlayerTrainerRef = string | { _id?: string };
+type EditablePlayer = {
+  firstName?: string;
+  lastName?: string;
+  club?: string;
+  position?: string;
+  birthDate?: string | Date;
+  dominantFoot?: string;
+  trainers?: PlayerTrainerRef[];
+  photo?: string;
+  notes?: string;
+};
 
 function calculateAge(value?: string) {
   if (!value) return null;
@@ -15,7 +27,7 @@ function calculateAge(value?: string) {
   return age;
 }
 
-export default function EditPlayerPanel({ player, playerId }: { player: any; playerId: string }) {
+export default function EditPlayerPanel({ player, playerId }: { player: EditablePlayer; playerId: string }) {
   const [editing, setEditing] = useState(false);
   const [firstName, setFirstName] = useState(player.firstName || "");
   const [lastName, setLastName] = useState(player.lastName || "");
@@ -23,7 +35,10 @@ export default function EditPlayerPanel({ player, playerId }: { player: any; pla
   const [position, setPosition] = useState(player.position || "");
   const [birthDate, setBirthDate] = useState<string>(player.birthDate ? String(new Date(player.birthDate).toISOString().slice(0, 10)) : "");
   const [dominantFoot, setDominantFoot] = useState<string>(player.dominantFoot || "");
-  const [trainers, setTrainers] = useState<string[]>((player.trainers || []).map((t: any) => String(t._id || t)));
+  const [privateNotes, setPrivateNotes] = useState<string>(player.notes || "");
+  const [trainers, setTrainers] = useState<string[]>(
+    (player.trainers || []).map((t) => String(typeof t === "string" ? t : t._id || ""))
+  );
   const [allTrainers, setAllTrainers] = useState<Trainer[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +64,7 @@ export default function EditPlayerPanel({ player, playerId }: { player: any; pla
       position: position || undefined,
       birthDate: birthDate || undefined,
       dominantFoot: dominantFoot || undefined,
+      notes: privateNotes.trim() ? privateNotes : undefined,
       trainers: nextTrainers,
     };
 
@@ -126,7 +142,7 @@ export default function EditPlayerPanel({ player, playerId }: { player: any; pla
             <div>Klub: {(club || "-")}</div>
             <div>Pozycja: {(position || "-")}</div>
             <div>Data urodzenia: {birthDate ? `${new Date(birthDate).toLocaleDateString("pl-PL")} (wiek: ${calculateAge(birthDate)})` : "-"}</div>
-            <div>Lepsza noga: {dominantFoot ? (dominantFoot === "left" ? "Lewa" : "Prawa") : "-"}</div>
+            <div>Lepsza noga: {dominantFoot ? (dominantFoot === "left" ? "Lewa" : dominantFoot === "both" ? "Obie" : "Prawa") : "-"}</div>
 
           <div className="mt-2">
             <div className="mb-2 text-xs font-semibold text-slate-500">Trenerzy</div>
@@ -158,6 +174,11 @@ export default function EditPlayerPanel({ player, playerId }: { player: any; pla
                 Dodaj
               </button>
             </div>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/70 p-3">
+            <div className="text-xs font-semibold uppercase tracking-wide text-amber-800">Prywatne uwagi (tylko trener / admin)</div>
+            <div className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{privateNotes.trim() || "Brak uwag."}</div>
           </div>
         </div>
       ) : (
@@ -213,6 +234,16 @@ export default function EditPlayerPanel({ player, playerId }: { player: any; pla
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="grid gap-1">
+            <label className="field-label">Prywatne uwagi (widoczne tylko dla trenera / admina)</label>
+            <textarea
+              className="field-textarea min-h-28"
+              value={privateNotes}
+              onChange={(e) => setPrivateNotes(e.target.value)}
+              placeholder="Np. obserwacje, komunikacja z rodzicem, zalecenia treningowe..."
+            />
           </div>
 
           {error ? <div className="text-sm text-red-600">{error}</div> : null}

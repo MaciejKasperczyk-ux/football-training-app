@@ -41,13 +41,21 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         (token as any).role = (user as any).role;
         (token as any).name = (user as any).name;
         (token as any).playerId = (user as any).playerId ?? null;
         (token as any).hasPasswordChanged = (user as any).hasPasswordChanged;
       }
+
+      if (trigger === "update" && session) {
+        const nextSession = session as { hasPasswordChanged?: boolean };
+        if (typeof nextSession.hasPasswordChanged === "boolean") {
+          (token as any).hasPasswordChanged = nextSession.hasPasswordChanged;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
 export default function ChangePasswordPage() {
-  const { status } = useSession();
+  const { status, update } = useSession();
   const router = useRouter();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -55,6 +55,8 @@ export default function ChangePasswordPage() {
       setLoading(false);
       return;
     }
+
+    await update({ hasPasswordChanged: true });
 
     setSuccess(true);
     setCurrentPassword("");

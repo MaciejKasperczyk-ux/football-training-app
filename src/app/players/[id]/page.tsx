@@ -170,16 +170,16 @@ export default async function PlayerPage({ params }: PageProps) {
   return (
     <div className="page-wrap">
       <div className="hero-card">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/20 bg-white/10 shadow-lg sm:h-24 sm:w-24">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/20 bg-white/10">
               {playerProfile.photo ? (
                 <Image
                   src={playerProfile.photo}
                   alt={`Zdjecie ${player.firstName} ${player.lastName}`}
                   fill
                   className="object-cover"
-                  sizes="96px"
+                  sizes="80px"
                   unoptimized
                 />
               ) : (
@@ -188,56 +188,38 @@ export default async function PlayerPage({ params }: PageProps) {
                 </div>
               )}
             </div>
-
             <div>
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-cyan-100">
-                  PLAYER PROFILE
-                </span>
-                {playerProfile.position ? <span className="pill border-white/20 bg-white/10 text-slate-100">{playerProfile.position}</span> : null}
-                {playerProfile.club ? <span className="pill border-white/20 bg-white/10 text-slate-100">{playerProfile.club}</span> : null}
-              </div>
               <h1 className="page-title">{player.firstName} {player.lastName}</h1>
-              <p className="page-subtitle">Profil zawodnika, historia treningow i plan rozwoju.</p>
-              <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-100">
+              <p className="page-subtitle">Najwazniejsze informacje i postep zawodnika.</p>
+              <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-100">
                 <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">Wiek: {age ?? "-"}</span>
-                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">Lepsza noga: {dominantFoot}</span>
-                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">
-                  Ostatni trening: {recentTraining ? new Date(recentTraining.date).toLocaleDateString("pl-PL") : "Brak"}
-                </span>
+                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">Pozycja: {playerProfile.position ?? "-"}</span>
+                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">Klub: {playerProfile.club ?? "-"}</span>
               </div>
             </div>
           </div>
 
-          <div className="grid min-w-[220px] gap-2">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-xl border border-white/15 bg-white/10 p-3">
-                <div className="text-[11px] uppercase tracking-wide text-cyan-100/80">Treningi</div>
-                <div className="mt-1 text-xl font-semibold text-white">{trainingsList.length}</div>
-              </div>
-              <div className="rounded-xl border border-white/15 bg-white/10 p-3">
-                <div className="text-[11px] uppercase tracking-wide text-cyan-100/80">Zakonczone treningi</div>
-                <div className="mt-1 text-xl font-semibold text-white">{completedTrainings}</div>
-              </div>
-              <div className="rounded-xl border border-white/15 bg-white/10 p-3">
-                <div className="text-[11px] uppercase tracking-wide text-cyan-100/80">Umiejetnosci</div>
-                <div className="mt-1 text-xl font-semibold text-white">{Math.round(overallSkillRatio * 100)}%</div>
-              </div>
-              <div className="rounded-xl border border-white/15 bg-white/10 p-3">
-                <div className="text-[11px] uppercase tracking-wide text-cyan-100/80">Zakonczone umiejetnosci</div>
-                <div className="mt-1 text-xl font-semibold text-white">{completedSkills}/{skillProgress.length}</div>
-              </div>
-            </div>
-
-            {canManage ? (
-              <div className="flex flex-wrap justify-end gap-2 pt-1">
-                <Link className="btn btn-secondary" href="/players">
-                  Wroc do listy
-                </Link>
-                <DeletePlayerButton playerId={String(playerProfile._id)} />
-              </div>
-            ) : null}
+          <div className="flex flex-wrap gap-2">
+            <Link className="btn btn-secondary" href="/players">
+              Wroc do listy
+            </Link>
+            {canManage ? <DeletePlayerButton playerId={String(playerProfile._id)} /> : null}
           </div>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="surface p-4">
+          <div className="text-xs uppercase tracking-wide text-slate-500">Treningi</div>
+          <div className="mt-1 text-2xl font-semibold text-slate-900">{trainingsList.length}</div>
+        </div>
+        <div className="surface p-4">
+          <div className="text-xs uppercase tracking-wide text-slate-500">Umiejetnosci zakonczone</div>
+          <div className="mt-1 text-2xl font-semibold text-slate-900">{completedSkills}/{skillProgress.length}</div>
+        </div>
+        <div className="surface p-4">
+          <div className="text-xs uppercase tracking-wide text-slate-500">Sredni postep</div>
+          <div className="mt-1 text-2xl font-semibold text-slate-900">{Math.round(overallSkillRatio * 100)}%</div>
         </div>
       </div>
 
@@ -249,23 +231,23 @@ export default async function PlayerPage({ params }: PageProps) {
 
           <div className="surface p-5">
             <div className="mb-3">
-              <h2 className="section-title">Historia treningow</h2>
-              <p className="section-copy">Wszystkie zarejestrowane treningi zawodnika.</p>
+              <h2 className="section-title">Ostatnie treningi</h2>
+              <p className="section-copy">Maksymalnie 8 ostatnich wpisow.</p>
             </div>
 
-            {trainings.length === 0 ? (
+            {trainingsList.length === 0 ? (
               <div className="text-sm text-slate-600">Brak treningow.</div>
             ) : (
               <div className="grid gap-2">
-                {(trainings as TrainingItem[]).map((training) => (
+                {trainingsList.slice(0, 8).map((training) => (
                   <div key={String(training._id)} className="surface-muted p-3">
                     <div className="text-sm font-semibold">
                       {new Date(training.date).toLocaleDateString("pl-PL")}
                       {training.durationMinutes ? ` - ${training.durationMinutes} min` : ""}
                     </div>
-                    {training.goal ? <div className="mt-1 text-sm text-slate-600">{training.goal}</div> : null}
-                    {training.notes ? <div className="mt-1 text-xs text-slate-600">{training.notes}</div> : null}
-                    <div className="mt-2"><span className="pill">Elementy: {training.entries?.length ?? 0}</span></div>
+                    <div className="mt-1 text-xs text-slate-600">
+                      Cel: {training.goal?.trim() ? training.goal : "-"} | Elementy: {training.entries?.length ?? 0}
+                    </div>
                     {canManage ? (
                       <Link className="btn btn-secondary mt-3 w-fit" href={`/trainings/${String(training._id)}`}>
                         Szczegoly
@@ -280,81 +262,53 @@ export default async function PlayerPage({ params }: PageProps) {
 
         <div className="space-y-4">
           <PlayerSkillsRadar data={skillProgress} />
-          {role === "admin" ? <PlayerAccountPanel playerId={String(playerProfile._id)} playerName={`${player.firstName} ${player.lastName}`} /> : null}
 
           <div className="surface p-5">
-            <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-cyan-50/60 p-4">
-              <div className="flex items-center gap-3">
-                <div className="relative h-14 w-14 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
-                  {playerProfile.photo ? (
-                    <Image
-                      src={playerProfile.photo}
-                      alt={`Avatar ${player.firstName} ${player.lastName}`}
-                      fill
-                      className="object-cover"
-                      sizes="56px"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sky-200 to-blue-200 text-sm font-bold text-slate-700">
-                      {playerInitials}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <h2 className="section-title">Karta zawodnika</h2>
-                  <p className="section-copy">Szybki podglad danych i postepu.</p>
-                </div>
+            <h2 className="section-title">Szybkie podsumowanie</h2>
+            <div className="mt-3 grid gap-2 text-sm">
+              <div className="surface-muted flex items-center justify-between px-3 py-2">
+                <span className="text-slate-600">Lepsza noga</span>
+                <span className="font-semibold text-slate-900">{dominantFoot}</span>
               </div>
-
-              <div className="mt-4 grid gap-2 text-sm">
-                <div className="surface-muted flex items-center justify-between px-3 py-2">
-                  <span className="text-slate-600">Klub</span>
-                  <span className="font-semibold text-slate-900">{playerProfile.club || "-"}</span>
-                </div>
-                <div className="surface-muted flex items-center justify-between px-3 py-2">
-                  <span className="text-slate-600">Pozycja</span>
-                  <span className="font-semibold text-slate-900">{playerProfile.position || "-"}</span>
-                </div>
-                <div className="surface-muted flex items-center justify-between px-3 py-2">
-                  <span className="text-slate-600">Wiek</span>
-                  <span className="font-semibold text-slate-900">{age ?? "-"}</span>
-                </div>
-                <div className="surface-muted flex items-center justify-between px-3 py-2">
-                  <span className="text-slate-600">Lepsza noga</span>
-                  <span className="font-semibold text-slate-900">{dominantFoot}</span>
-                </div>
+              <div className="surface-muted flex items-center justify-between px-3 py-2">
+                <span className="text-slate-600">Zakonczone treningi</span>
+                <span className="font-semibold text-slate-900">{completedTrainings}</span>
               </div>
+              <div className="surface-muted flex items-center justify-between px-3 py-2">
+                <span className="text-slate-600">Ostatni trening</span>
+                <span className="font-semibold text-slate-900">
+                  {recentTraining ? new Date(recentTraining.date).toLocaleDateString("pl-PL") : "-"}
+                </span>
+              </div>
+            </div>
 
-              <div className="mt-4">
-                <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <span>Sredni postep umiejetnosci</span>
-                  <span>{Math.round(overallSkillRatio * 100)}%</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-200">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 transition-all"
-                    style={{ width: `${Math.round(overallSkillRatio * 100)}%` }}
-                  />
-                </div>
+            <div className="mt-4">
+              <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span>Postep umiejetnosci</span>
+                <span>{Math.round(overallSkillRatio * 100)}%</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 transition-all"
+                  style={{ width: `${Math.round(overallSkillRatio * 100)}%` }}
+                />
               </div>
             </div>
           </div>
 
           <div className="surface p-5">
-            <h2 className="section-title">Glowne umiejetnosci</h2>
+            <h2 className="section-title">Top umiejetnosci</h2>
             <div className="mt-3 grid gap-2">
-              {skillProgress.map((skill) => (
+              {skillProgress.slice(0, 6).map((skill) => (
                 <div key={skill.id} className="surface-muted flex items-center justify-between px-3 py-2 text-sm">
-                  <span>{skill.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="pill">{skill.done}/{skill.total}</span>
-                    <span className="pill">{Math.round(skill.ratio * 100)}%</span>
-                  </div>
+                  <span className="truncate">{skill.name}</span>
+                  <span className="pill">{Math.round(skill.ratio * 100)}%</span>
                 </div>
               ))}
             </div>
           </div>
+
+          {role === "admin" ? <PlayerAccountPanel playerId={String(playerProfile._id)} playerName={`${player.firstName} ${player.lastName}`} /> : null}
         </div>
       </div>
     </div>

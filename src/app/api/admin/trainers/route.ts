@@ -25,7 +25,8 @@ export const createTrainerSchema = z.object({
   lastName: z.string().min(1),
   phone: z.string().min(1, "Telefon jest wymagany"),
   club: z.string().min(1, "Klub jest wymagany"),
-  yearGroups: z.array(z.enum(AGE_GROUP_OPTIONS)).min(1, "Wybierz co najmniej jedną grupę"),
+  yearGroups: z.array(z.enum(AGE_GROUP_OPTIONS)).min(1, "Wybierz co najmniej jedna grupe"),
+  role: z.enum(["trainer", "club_trainer"]).default("trainer"),
 });
 
 function generateTemporaryPassword(): string {
@@ -81,7 +82,7 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const exists = await User.findOne({ email: parsed.data.email.toLowerCase() });
-  if (exists) return NextResponse.json({ error: "Trener już istnieje" }, { status: 409 });
+  if (exists) return NextResponse.json({ error: "Trener juz istnieje" }, { status: 409 });
 
   const temporaryPassword = generateTemporaryPassword();
   const hash = await bcrypt.hash(temporaryPassword, 10);
@@ -93,7 +94,7 @@ export async function POST(req: Request) {
     club: parsed.data.club,
     yearGroups: parsed.data.yearGroups,
     yearGroup: parsed.data.yearGroups[0],
-    role: "trainer",
+    role: parsed.data.role,
     passwordHash: hash,
     hasPasswordChanged: false,
   })) as TrainerDoc;

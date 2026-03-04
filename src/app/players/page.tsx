@@ -141,6 +141,47 @@ export default async function PlayersPage() {
     };
   });
 
+  if (role === "club_trainer") {
+    return (
+      <div className="page-wrap">
+        <div className="hero-card">
+          <h1 className="page-title">Moi zawodnicy</h1>
+          <p className="page-subtitle">Widok uproszczony: tylko przypisani zawodnicy.</p>
+        </div>
+
+        <div className="surface p-4">
+          <div className="entity-stats">
+            <span className="pill">Zawodnicy: {playersWithMeta.length}</span>
+          </div>
+
+          {playersWithMeta.length === 0 ? (
+            <div className="p-4 text-sm text-slate-600">Brak przypisanych zawodnikow.</div>
+          ) : (
+            <div className="entity-grid mt-3">
+              {playersWithMeta.map((player) => (
+                <article key={String(player._id)} className="entity-card">
+                  <div>
+                    <Link className="entity-title" href={`/players/${String(player._id)}`}>
+                      {player.firstName} {player.lastName}
+                    </Link>
+                    <p className="entity-subtle">{player.club ?? "Brak klubu"}</p>
+                  </div>
+                  <div className="mt-3 text-sm text-slate-700">Pozycja: {player.position ?? "-"}</div>
+                  <div className="mt-1 text-sm text-slate-700">Wiek: {player.effectiveAge ?? "-"}</div>
+                  <div className="mt-3">
+                    <Link className="btn btn-secondary" href={`/players/${String(player._id)}`}>
+                      Otworz
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   const clubCount = new Set(playersList.map((player) => String(player.club ?? "").trim()).filter(Boolean)).size;
   const knownAges = playersWithMeta
     .map((player) => player.effectiveAge)

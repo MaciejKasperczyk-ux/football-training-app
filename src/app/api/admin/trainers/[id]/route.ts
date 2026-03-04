@@ -24,7 +24,8 @@ const updateTrainerSchema = z.object({
   lastName: z.string().min(1),
   phone: z.string().min(1, "Telefon jest wymagany"),
   club: z.string().min(1, "Klub jest wymagany"),
-  yearGroups: z.array(z.enum(AGE_GROUP_OPTIONS)).min(1, "Wybierz co najmniej jedną grupę"),
+  yearGroups: z.array(z.enum(AGE_GROUP_OPTIONS)).min(1, "Wybierz co najmniej jedna grupe"),
+  role: z.enum(["trainer", "club_trainer"]).default("trainer"),
 });
 
 function normalizeGroups(values: unknown[] | undefined, legacyValue?: string): AgeGroup[] {
@@ -66,10 +67,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     .select("email name phone club yearGroups yearGroup role createdAt")
     .lean()) as TrainerDoc | null;
 
-  if (!trainer) {
-    return NextResponse.json({ error: "Trainer not found" }, { status: 404 });
-  }
-
+  if (!trainer) return NextResponse.json({ error: "Trainer not found" }, { status: 404 });
   return NextResponse.json(serializeTrainer(trainer));
 }
 
@@ -90,7 +88,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const emailLower = parsed.data.email.toLowerCase();
   const duplicate = await User.findOne({ email: emailLower, _id: { $ne: trainerId } }).select("_id").lean();
-  if (duplicate) return NextResponse.json({ error: "Użytkownik z tym e-mailem już istnieje" }, { status: 409 });
+  if (duplicate) return NextResponse.json({ error: "Uzytkownik z tym e-mailem juz istnieje" }, { status: 409 });
 
   const updated = (await User.findOneAndUpdate(
     { _id: trainerId, role: { $in: ["trainer", "club_trainer"] } },
@@ -101,16 +99,14 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       club: parsed.data.club,
       yearGroups: parsed.data.yearGroups,
       yearGroup: parsed.data.yearGroups[0],
+      role: parsed.data.role,
     },
     { new: true }
   )
     .select("email name phone club yearGroups yearGroup role createdAt")
     .lean()) as TrainerDoc | null;
 
-  if (!updated) {
-    return NextResponse.json({ error: "Trainer not found" }, { status: 404 });
-  }
-
+  if (!updated) return NextResponse.json({ error: "Trainer not found" }, { status: 404 });
   return NextResponse.json(serializeTrainer(updated));
 }
 
@@ -121,15 +117,11 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   await dbConnect();
 
   const { id: trainerId } = await params;
-
   if (!Types.ObjectId.isValid(trainerId)) {
     return NextResponse.json({ error: "Invalid trainer ID" }, { status: 400 });
   }
 
   const trainer = await User.findByIdAndDelete(trainerId);
-  if (!trainer) {
-    return NextResponse.json({ error: "Trainer not found" }, { status: 404 });
-  }
-
+  if (!trainer) return NextResponse.json({ error: "Trainer not found" }, { status: 404 });
   return NextResponse.json({ message: "Trainer deleted" });
 }

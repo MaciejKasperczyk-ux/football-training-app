@@ -2,12 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { Goal } from "@/models/Goal";
 import { PlayerSkill } from "@/models/PlayerSkill";
+import { Player } from "@/models/Player";
 import { requireRoleApi } from "@/lib/auth";
 import { Types } from "mongoose";
 import { z } from "zod";
 
 type Ctx = { params: Promise<{ id: string }> };
-type SessionUser = { role?: "admin" | "trainer" | "viewer" | "player"; playerId?: string | null };
+type SessionUser = { role?: "admin" | "trainer" | "club_trainer" | "viewer" | "player"; playerId?: string | null; id?: string | null };
 
 const updateSchema = z.object({
   title: z.string().min(1).optional(),
@@ -17,7 +18,7 @@ const updateSchema = z.object({
 });
 
 export async function GET(_: NextRequest, { params }: Ctx) {
-  const auth = await requireRoleApi(["admin", "trainer", "viewer", "player"]);
+  const auth = await requireRoleApi(["admin", "trainer", "club_trainer", "viewer", "player"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
 
   const { id } = await params;
@@ -30,8 +31,13 @@ export async function GET(_: NextRequest, { params }: Ctx) {
   const user = (auth.session?.user as SessionUser | undefined) ?? undefined;
   const role = user?.role;
   const ownPlayerId = user?.playerId;
+  const ownUserId = user?.id;
   if (role === "player" && String(goal.playerId) !== String(ownPlayerId ?? "")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  if (role === "club_trainer") {
+    const assigned = await Player.exists({ _id: goal.playerId, trainers: ownUserId });
+    if (!assigned) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   return NextResponse.json(goal);

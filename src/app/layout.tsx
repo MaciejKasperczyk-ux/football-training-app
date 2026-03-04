@@ -31,7 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                       <Image src="/logo.png" alt="Logo Futbolucja" width={56} height={56} className="h-14 w-14 object-contain" priority />
                     </Link>
                     <span className="hidden sm:inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs text-sky-900">
-                      {role === "admin" ? "Panel admina" : role === "player" ? "Panel zawodnika" : "Panel trenera"}
+                      {role === "admin" ? "Panel admina" : role === "player" ? "Panel zawodnika" : role === "club_trainer" ? "Panel trenera klubowego" : "Panel trenera"}
                     </span>
                   </div>
 
@@ -56,9 +56,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                         <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/skills">
                           Umiejętności
                         </Link>
-                        <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/charts">
-                          Wykresy
-                        </Link>
+                        {role !== "club_trainer" ? (
+                          <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/charts">
+                            Wykresy
+                          </Link>
+                        ) : null}
                         {role === "admin" ? (
                           <>
                             <Link className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900" href="/admin/trainers">

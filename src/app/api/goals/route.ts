@@ -2,10 +2,11 @@
 import { dbConnect } from "@/lib/mongodb";
 import { Goal } from "@/models/Goal";
 import { PlayerSkill } from "@/models/PlayerSkill";
+import { Player } from "@/models/Player";
 import { requireRoleApi } from "@/lib/auth";
 import { z } from "zod";
 
-type SessionUser = { role?: "admin" | "trainer" | "viewer" | "player"; playerId?: string | null; id?: string };
+type SessionUser = { role?: "admin" | "trainer" | "club_trainer" | "viewer" | "player"; playerId?: string | null; id?: string };
 
 const goalCreateSchema = z.object({
   playerId: z.string().min(1),
@@ -18,7 +19,7 @@ const goalCreateSchema = z.object({
 });
 
 export async function GET(req: Request) {
-  const auth = await requireRoleApi(["admin", "trainer", "viewer", "player"]);
+  const auth = await requireRoleApi(["admin", "trainer", "club_trainer", "viewer", "player"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
 
   await dbConnect();
@@ -29,6 +30,7 @@ export async function GET(req: Request) {
   const user = (auth.session?.user as SessionUser | undefined) ?? undefined;
   const role = user?.role;
   const ownPlayerId = user?.playerId;
+  const ownUserId = user?.id;
 
   if (role === "player") {
     if (!ownPlayerId) return NextResponse.json([], { status: 200 });
@@ -36,6 +38,22 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     playerId = String(ownPlayerId);
+  }
+
+  if (role === "club_trainer") {
+    if (!ownUserId) return NextResponse.json([], { status: 200 });
+    if (playerId) {
+      const assigned = await Player.exists({ _id: playerId, trainers: ownUserId });
+      if (!assigned) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    } else {
+      const assignedPlayers = await Player.find({ trainers: ownUserId }).select("_id").lean();
+      const assignedIds = assignedPlayers.map((player) => String((player as { _id: unknown })._id));
+      if (assignedIds.length === 0) return NextResponse.json([], { status: 200 });
+      const filter: Record<string, unknown> = { playerId: { $in: assignedIds } };
+      if (status) filter.status = status;
+      const goals = await Goal.find(filter).sort({ dueDate: 1 });
+      return NextResponse.json(goals);
+    }
   }
 
   const filter: Record<string, unknown> = {};

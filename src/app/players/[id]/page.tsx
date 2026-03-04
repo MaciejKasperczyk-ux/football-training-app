@@ -7,7 +7,7 @@ import { PlayerSkill } from "@/models/PlayerSkill";
 import { Skill } from "@/models/Skill";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { canAccessPlayer, type AppRole } from "@/lib/auth";
+import { type AppRole } from "@/lib/auth";
 import DeletePlayerButton from "@/components/players/DeletePlayerButton";
 import EditPlayerPanel from "@/components/players/EditPlayerPanel";
 import PlayerSkillsManager from "@/components/players/PlayerSkillsManager";
@@ -18,7 +18,7 @@ import PlayerAccountPanel from "@/components/players/PlayerAccountPanel";
 type PageProps = { params: Promise<{ id: string }> };
 type SkillItem = { _id: unknown; name: string; details?: unknown[] };
 type PlayerSkillItem = { skillId: unknown; detailId?: unknown | null; status?: string };
-type SessionUser = { role?: AppRole; playerId?: string | null } & Record<string, unknown>;
+type SessionUser = { role?: AppRole; playerId?: string | null; id?: string | null } & Record<string, unknown>;
 type PlayerProfile = {
   _id: unknown;
   firstName: string;
@@ -80,7 +80,7 @@ export default async function PlayerPage({ params }: PageProps) {
   const sessionUser = session.user as SessionUser;
   const role = sessionUser.role;
   const canManage = role === "admin" || role === "trainer";
-  if (!canAccessPlayer(sessionUser, id)) {
+  if (role === "player" && String(sessionUser.playerId ?? "") !== String(id)) {
     return (
       <div className="surface p-6">
         <div className="page-title">Profil zawodnika</div>
@@ -101,6 +101,23 @@ export default async function PlayerPage({ params }: PageProps) {
         <div className="text-sm text-slate-700">Nie znaleziono zawodnika.</div>
       </div>
     );
+  }
+
+  if (role === "club_trainer") {
+    const ownUserId = String(sessionUser.id ?? "");
+    const assigned = ((player as { trainers?: unknown[] }).trainers ?? []).some((trainer) => {
+      if (typeof trainer === "string") return trainer === ownUserId;
+      if (trainer && typeof trainer === "object" && "_id" in trainer) return String((trainer as { _id?: unknown })._id) === ownUserId;
+      return false;
+    });
+    if (!assigned) {
+      return (
+        <div className="surface p-6">
+          <div className="page-title">Profil zawodnika</div>
+          <div className="mt-2 text-sm text-slate-600">Brak dostepu do tego profilu.</div>
+        </div>
+      );
+    }
   }
 
   const trainings = await TrainingSession.find({ players: player._id }).sort({ date: -1 }).lean();

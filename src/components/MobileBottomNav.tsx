@@ -52,6 +52,11 @@ export default function MobileBottomNav({ role }: { role?: Role }) {
         <Link href="/skills" className={itemClass(isActive("/skills"))}>
           Umiejetnosci
         </Link>
+        {role !== "club_trainer" ? (
+          <Link href="/charts" className={itemClass(isActive("/charts"))}>
+            Wykresy
+          </Link>
+        ) : null}
         {role === "admin" ? (
           <Link href="/admin/trainers" className={itemClass(isActive("/admin"))}>
             Admin

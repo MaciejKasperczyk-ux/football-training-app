@@ -2,9 +2,10 @@
 import { dbConnect } from "@/lib/mongodb";
 import { requireRoleApi } from "@/lib/auth";
 import { PlayerSkill } from "@/models/PlayerSkill";
+import { Player } from "@/models/Player";
 import { z } from "zod";
 
-type SessionUser = { role?: "admin" | "trainer" | "viewer" | "player"; playerId?: string | null };
+type SessionUser = { role?: "admin" | "trainer" | "club_trainer" | "viewer" | "player"; playerId?: string | null; id?: string | null };
 
 const createSchema = z.object({
   playerId: z.string().min(1),
@@ -17,7 +18,7 @@ const createSchema = z.object({
 });
 
 export async function GET(req: Request) {
-  const auth = await requireRoleApi(["admin", "trainer", "viewer", "player"]);
+  const auth = await requireRoleApi(["admin", "trainer", "club_trainer", "viewer", "player"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
 
   await dbConnect();
@@ -27,6 +28,7 @@ export async function GET(req: Request) {
   const user = (auth.session?.user as SessionUser | undefined) ?? undefined;
   const role = user?.role;
   const ownPlayerId = user?.playerId;
+  const ownUserId = user?.id;
 
   if (role === "player") {
     if (!ownPlayerId) return NextResponse.json([], { status: 200 });
@@ -34,6 +36,20 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     playerId = String(ownPlayerId);
+  }
+
+  if (role === "club_trainer") {
+    if (!ownUserId) return NextResponse.json([], { status: 200 });
+    if (playerId) {
+      const assigned = await Player.exists({ _id: playerId, trainers: ownUserId });
+      if (!assigned) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    } else {
+      const assignedPlayers = await Player.find({ trainers: ownUserId }).select("_id").lean();
+      const assignedIds = assignedPlayers.map((player) => String((player as { _id: unknown })._id));
+      if (assignedIds.length === 0) return NextResponse.json([], { status: 200 });
+      const docs = await PlayerSkill.find({ playerId: { $in: assignedIds } }).sort({ updatedAt: -1 });
+      return NextResponse.json(docs);
+    }
   }
 
   if (!playerId) return NextResponse.json({ error: "playerId is required" }, { status: 400 });

@@ -3,6 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+type Skill = {
+  _id: string;
+  name: string;
+  details?: Array<{ _id: string; name: string }>;
+};
+
 export default function NewPlayerPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -15,6 +21,47 @@ export default function NewPlayerPage() {
   const [age] = useState<string>("");
   const [birthDate, setBirthDate] = useState<string>("");
   const [dominantFoot, setDominantFoot] = useState<string>("");
+  const [showSkillsPicker, setShowSkillsPicker] = useState(false);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [skillsLoading, setSkillsLoading] = useState(false);
+  const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
+  const [selectedDetailsBySkill, setSelectedDetailsBySkill] = useState<Record<string, string[]>>({});
+
+  async function toggleSkillsPicker() {
+    const nextOpen = !showSkillsPicker;
+    setShowSkillsPicker(nextOpen);
+    if (!nextOpen || skills.length > 0) return;
+    setSkillsLoading(true);
+    try {
+      const res = await fetch("/api/skills", { cache: "no-store" });
+      const data = await res.json().catch(() => []);
+      setSkills(Array.isArray(data) ? (data as Skill[]) : []);
+    } finally {
+      setSkillsLoading(false);
+    }
+  }
+
+  function toggleSkill(skillId: string) {
+    setSelectedSkillIds((prev) => {
+      if (prev.includes(skillId)) {
+        setSelectedDetailsBySkill((current) => {
+          const next = { ...current };
+          delete next[skillId];
+          return next;
+        });
+        return prev.filter((id) => id !== skillId);
+      }
+      return [...prev, skillId];
+    });
+  }
+
+  function toggleDetail(skillId: string, detailId: string) {
+    setSelectedDetailsBySkill((prev) => {
+      const current = prev[skillId] ?? [];
+      const nextDetails = current.includes(detailId) ? current.filter((id) => id !== detailId) : [...current, detailId];
+      return { ...prev, [skillId]: nextDetails };
+    });
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,6 +79,10 @@ export default function NewPlayerPage() {
         age: age ? Number(age) : undefined,
         birthDate: birthDate || undefined,
         dominantFoot: dominantFoot || undefined,
+        initialSkills: selectedSkillIds.map((skillId) => ({
+          skillId,
+          detailIds: selectedDetailsBySkill[skillId] ?? [],
+        })),
       }),
     });
 
@@ -92,6 +143,48 @@ export default function NewPlayerPage() {
               <option value="right">Prawa</option>
             </select>
           </div>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={toggleSkillsPicker}
+          >
+            {showSkillsPicker ? "Ukryj umiejetnosci" : "Dodaj umiejetnosci"}
+          </button>
+
+          {showSkillsPicker ? (
+            <div className="mt-3 space-y-3">
+              {skillsLoading ? <div className="text-sm text-slate-600">Ladowanie umiejetnosci...</div> : null}
+              {!skillsLoading && skills.length === 0 ? <div className="text-sm text-slate-600">Brak umiejetnosci do wyboru.</div> : null}
+              {skills.map((skill) => {
+                const selected = selectedSkillIds.includes(skill._id);
+                return (
+                  <div key={skill._id} className="rounded-lg border border-slate-200 bg-white p-3">
+                    <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                      <input type="checkbox" checked={selected} onChange={() => toggleSkill(skill._id)} />
+                      {skill.name}
+                    </label>
+                    {selected && (skill.details?.length ?? 0) > 0 ? (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {(skill.details ?? []).map((detail) => (
+                          <label key={detail._id} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={(selectedDetailsBySkill[skill._id] ?? []).includes(detail._id)}
+                              onChange={() => toggleDetail(skill._id, detail._id)}
+                            />
+                            {detail.name}
+                          </label>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
 
         {error ? <div className="text-sm text-red-600">{error}</div> : null}

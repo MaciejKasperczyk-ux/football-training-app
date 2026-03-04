@@ -62,7 +62,7 @@ export async function GET() {
 
   await dbConnect();
 
-  const trainers = (await User.find({ role: "trainer" })
+  const trainers = (await User.find({ role: { $in: ["trainer", "club_trainer"] } })
     .select("email name phone club yearGroups yearGroup role createdAt")
     .sort({ createdAt: -1 })
     .lean()) as TrainerDoc[];

@@ -62,7 +62,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Invalid trainer ID" }, { status: 400 });
   }
 
-  const trainer = (await User.findOne({ _id: trainerId, role: "trainer" })
+  const trainer = (await User.findOne({ _id: trainerId, role: { $in: ["trainer", "club_trainer"] } })
     .select("email name phone club yearGroups yearGroup role createdAt")
     .lean()) as TrainerDoc | null;
 
@@ -93,7 +93,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (duplicate) return NextResponse.json({ error: "Użytkownik z tym e-mailem już istnieje" }, { status: 409 });
 
   const updated = (await User.findOneAndUpdate(
-    { _id: trainerId, role: "trainer" },
+    { _id: trainerId, role: { $in: ["trainer", "club_trainer"] } },
     {
       email: emailLower,
       name: `${parsed.data.firstName} ${parsed.data.lastName}`,

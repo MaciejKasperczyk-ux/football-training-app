@@ -8,7 +8,7 @@ export default function AdminUsersPage() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"admin" | "trainer" | "viewer">("trainer");
+  const [role, setRole] = useState<"admin" | "trainer" | "club_trainer" | "viewer">("trainer");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ResultState>(null);
 
@@ -132,8 +132,9 @@ export default function AdminUsersPage() {
 
             <div className="grid gap-1">
               <label className="field-label">Rola</label>
-              <select className="field-select" value={role} onChange={(event) => setRole(event.target.value as "admin" | "trainer" | "viewer")}>
+              <select className="field-select" value={role} onChange={(event) => setRole(event.target.value as "admin" | "trainer" | "club_trainer" | "viewer")}>
                 <option value="trainer">Trener</option>
+                <option value="club_trainer">Trener klubowy (tylko odczyt swoich zawodnikow)</option>
                 <option value="viewer">Przegladajacy</option>
                 <option value="admin">Administrator</option>
               </select>

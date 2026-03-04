@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { TrainingSession } from "@/models/TrainingSession";
+import { Player } from "@/models/Player";
 import { trainingSchema } from "@/lib/validators";
 import { requireRoleApi } from "@/lib/auth";
 import { isValidObjectId } from "mongoose";
@@ -8,7 +9,7 @@ import { isValidObjectId } from "mongoose";
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_: Request, { params }: Ctx) {
-  const auth = await requireRoleApi(["admin", "trainer", "viewer", "player"]);
+  const auth = await requireRoleApi(["admin", "trainer", "club_trainer", "viewer", "player"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
 
   await dbConnect();
@@ -19,9 +20,16 @@ export async function GET(_: Request, { params }: Ctx) {
 
   const role = (auth.session?.user as any)?.role;
   const ownPlayerId = (auth.session?.user as any)?.playerId;
+  const ownUserId = (auth.session?.user as any)?.id;
   if (role === "player") {
     const hasAccess = (doc.players ?? []).some((pid: any) => String(pid) === String(ownPlayerId ?? ""));
     if (!hasAccess) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  if (role === "club_trainer") {
+    if (!ownUserId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const trainingPlayerIds = (doc.players ?? []).map((pid: unknown) => String(pid));
+    const assignedPlayers = await Player.find({ _id: { $in: trainingPlayerIds }, trainers: ownUserId }).select("_id").lean();
+    if (assignedPlayers.length === 0) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   return NextResponse.json(doc);

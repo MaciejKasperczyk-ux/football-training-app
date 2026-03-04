@@ -11,7 +11,7 @@ const subSkillSchema = z.object({
 });
 
 export async function GET() {
-  const auth = await requireRoleApi(["admin", "trainer", "viewer"]);
+  const auth = await requireRoleApi(["admin", "trainer", "club_trainer", "viewer"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
 
   await dbConnect();

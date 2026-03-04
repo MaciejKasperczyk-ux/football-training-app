@@ -4,7 +4,7 @@ import { z } from "zod";
 export const userCreateSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1),
-  role: z.enum(["admin", "trainer", "viewer"]).optional(),
+  role: z.enum(["admin", "trainer", "club_trainer", "viewer"]).optional(),
   password: z.string().min(8),
 });
 

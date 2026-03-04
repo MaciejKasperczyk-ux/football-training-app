@@ -50,7 +50,7 @@ export default async function TrainerProfilePage({ params }: { params: Promise<{
 
   await dbConnect();
 
-  const trainer = (await User.findOne({ _id: id, role: "trainer" })
+  const trainer = (await User.findOne({ _id: id, role: { $in: ["trainer", "club_trainer"] } })
     .select("name email phone club yearGroups yearGroup")
     .lean()) as TrainerDoc | null;
 

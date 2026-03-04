@@ -86,8 +86,9 @@ export default async function PlayersPage() {
   }
 
   await dbConnect();
-  const role = (session.user as { role?: string; playerId?: string | null } | undefined)?.role;
-  const ownPlayerId = (session.user as { role?: string; playerId?: string | null } | undefined)?.playerId;
+  const role = (session.user as { role?: string; playerId?: string | null; id?: string } | undefined)?.role;
+  const ownPlayerId = (session.user as { role?: string; playerId?: string | null; id?: string } | undefined)?.playerId;
+  const ownUserId = (session.user as { role?: string; playerId?: string | null; id?: string } | undefined)?.id;
 
   if (role === "player" && ownPlayerId) {
     redirect(`/players/${ownPlayerId}`);
@@ -101,9 +102,10 @@ export default async function PlayersPage() {
     );
   }
 
+  const playerFilter = role === "club_trainer" ? (ownUserId ? { trainers: ownUserId } : { _id: null }) : {};
   const [players, trainers] = await Promise.all([
-    Player.find().populate("trainers", "name email").sort({ lastName: 1, firstName: 1 }).lean(),
-    User.find({ role: "trainer" }).select("name email yearGroups yearGroup").lean(),
+    Player.find(playerFilter).populate("trainers", "name email").sort({ lastName: 1, firstName: 1 }).lean(),
+    User.find({ role: { $in: ["trainer", "club_trainer"] } }).select("name email yearGroups yearGroup").lean(),
   ]);
 
   const groupTrainerMap = new Map<string, TrainerLink[]>();

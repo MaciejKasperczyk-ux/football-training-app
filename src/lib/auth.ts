@@ -2,7 +2,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 
-export type AppRole = "admin" | "trainer" | "viewer" | "player";
+export type AppRole = "admin" | "trainer" | "club_trainer" | "viewer" | "player";
 
 export type SessionUserLike = {
   role?: AppRole;

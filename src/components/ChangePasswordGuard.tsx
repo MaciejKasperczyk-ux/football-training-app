@@ -12,7 +12,7 @@ export function ChangePasswordGuard() {
     const role = (session?.user as any)?.role;
     if (
       session?.user &&
-      (role === "trainer" || role === "player") &&
+      (role === "trainer" || role === "club_trainer" || role === "player") &&
       !(session.user as any).hasPasswordChanged
     ) {
       router.push("/change-password");

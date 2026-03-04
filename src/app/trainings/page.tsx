@@ -40,16 +40,27 @@ export default async function TrainingsPage() {
   }
 
   await dbConnect();
-  const role = (session.user as { role?: string; playerId?: string | null } | undefined)?.role;
-  const ownPlayerId = (session.user as { role?: string; playerId?: string | null } | undefined)?.playerId;
+  const role = (session.user as { role?: string; playerId?: string | null; id?: string | null } | undefined)?.role;
+  const ownPlayerId = (session.user as { role?: string; playerId?: string | null; id?: string | null } | undefined)?.playerId;
+  const ownUserId = (session.user as { role?: string; playerId?: string | null; id?: string | null } | undefined)?.id;
+
+  const assignedPlayers =
+    role === "club_trainer" && ownUserId
+      ? ((await Player.find({ trainers: ownUserId }).select("_id firstName lastName").lean()) as PlayerListItem[])
+      : null;
+  const assignedPlayerIds = assignedPlayers?.map((player) => String(player._id)) ?? [];
 
   const trainings =
     role === "player"
       ? ownPlayerId
         ? await TrainingSession.find({ players: ownPlayerId }).sort({ date: -1 }).lean()
         : []
+      : role === "club_trainer"
+        ? assignedPlayerIds.length > 0
+          ? await TrainingSession.find({ players: { $in: assignedPlayerIds } }).sort({ date: -1 }).lean()
+          : []
       : await TrainingSession.find().sort({ date: -1 }).lean();
-  const players = await Player.find().lean();
+  const players = role === "club_trainer" ? assignedPlayers ?? [] : await Player.find().lean();
 
   const playersMap = new Map<string, string>();
   for (const p of players as PlayerListItem[]) {

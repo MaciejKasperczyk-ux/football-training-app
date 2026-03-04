@@ -10,7 +10,7 @@ const UserSchema = new Schema(
     yearGroups: [{ type: String, required: false, trim: true }],
     // Legacy single-value field kept for backwards compatibility with older data.
     yearGroup: { type: String, required: false, trim: true },
-    role: { type: String, enum: ["admin", "trainer", "viewer", "player"], default: "trainer" },
+    role: { type: String, enum: ["admin", "trainer", "club_trainer", "viewer", "player"], default: "trainer" },
     playerId: { type: Schema.Types.ObjectId, ref: "Player", required: false, unique: true, sparse: true },
     passwordHash: { type: String, required: true },
     hasPasswordChanged: { type: Boolean, default: false },

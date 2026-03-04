@@ -48,8 +48,9 @@ function getStatusColor(status: string) {
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   const name = session?.user?.name ?? "Użytkownik";
-  const role = (session?.user as { role?: string; playerId?: string | null } | undefined)?.role;
-  const playerId = (session?.user as { role?: string; playerId?: string | null } | undefined)?.playerId;
+  const role = (session?.user as { role?: string; playerId?: string | null; id?: string | null } | undefined)?.role;
+  const playerId = (session?.user as { role?: string; playerId?: string | null; id?: string | null } | undefined)?.playerId;
+  const userId = (session?.user as { role?: string; playerId?: string | null; id?: string | null } | undefined)?.id;
 
   if (!session?.user) {
     return (
@@ -78,22 +79,35 @@ export default async function DashboardPage() {
   }
 
   await dbConnect();
+  const canManage = role === "admin" || role === "trainer";
+  const isClubTrainer = role === "club_trainer";
+  const assignedPlayers = isClubTrainer && userId ? await Player.find({ trainers: userId }).select("_id").lean() : [];
+  const assignedPlayerIds = assignedPlayers.map((player) => String((player as { _id: unknown })._id));
 
-  const playersCount = await Player.countDocuments();
-  const trainingsCount = await TrainingSession.countDocuments();
+  const playerScopeFilter = isClubTrainer ? { _id: { $in: assignedPlayerIds } } : {};
+  const goalScopeFilter = isClubTrainer ? { playerId: { $in: assignedPlayerIds } } : {};
+  const trainingScopeFilter = isClubTrainer ? { players: { $in: assignedPlayerIds } } : {};
+
+  const playersCount = isClubTrainer ? assignedPlayerIds.length : await Player.countDocuments();
+  const trainingsCount = await TrainingSession.countDocuments(trainingScopeFilter);
 
   const today = startOfToday();
   const last7 = addDays(today, -7);
   const next14 = addDays(today, 14);
 
-  const trainingsLast7 = await TrainingSession.countDocuments({ date: { $gte: last7 } });
+  const trainingsLast7 = await TrainingSession.countDocuments({
+    ...trainingScopeFilter,
+    date: { $gte: last7 },
+  });
 
   const goalsOverdue = await Goal.countDocuments({
+    ...goalScopeFilter,
     status: { $ne: "done" },
     dueDate: { $lt: today },
   });
 
   const goalsNext14 = await Goal.find({
+    ...goalScopeFilter,
     status: { $ne: "done" },
     dueDate: { $gte: today, $lte: next14 },
   })
@@ -101,7 +115,7 @@ export default async function DashboardPage() {
     .limit(6)
     .lean();
 
-  const players = await Player.find().sort({ lastName: 1, firstName: 1 }).limit(6).lean();
+  const players = await Player.find(playerScopeFilter).sort({ lastName: 1, firstName: 1 }).limit(6).lean();
 
   return (
     <div className="space-y-6">
@@ -115,14 +129,16 @@ export default async function DashboardPage() {
             Zarządzaj zawodnikami, treningami i śledź postępy w osiąganiu celów.
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-blue-800 transition-all" href="/players/new">
-              + Dodaj zawodnika
-            </Link>
-            <Link className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50 transition-all" href="/trainings/new">
-              + Zaplanuj trening
-            </Link>
-          </div>
+          {canManage ? (
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Link className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-blue-800 transition-all" href="/players/new">
+                + Dodaj zawodnika
+              </Link>
+              <Link className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50 transition-all" href="/trainings/new">
+                + Zaplanuj trening
+              </Link>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -207,25 +223,29 @@ export default async function DashboardPage() {
         <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100 p-6 shadow-sm">
           <div className="text-sm font-medium text-slate-600 mb-4">Szybkie akcje</div>
           <div className="space-y-2">
-            <Link className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 transition-colors border border-slate-200" href="/players/new">
-              <span className="text-slate-700">
-                <Icon className="h-4 w-4">
-                  <path d="M12 5v14" />
-                  <path d="M5 12h14" />
-                </Icon>
-              </span>
-              Nowy zawodnik
-            </Link>
-            <Link className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 transition-colors border border-slate-200" href="/trainings/new">
-              <span className="text-slate-700">
-                <Icon className="h-4 w-4">
-                  <rect x="6.5" y="5.5" width="11" height="13" rx="1.5" />
-                  <path d="M9 9.5h6" />
-                  <path d="M9 12.5h6" />
-                </Icon>
-              </span>
-              Nowy trening
-            </Link>
+            {canManage ? (
+              <>
+                <Link className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 transition-colors border border-slate-200" href="/players/new">
+                  <span className="text-slate-700">
+                    <Icon className="h-4 w-4">
+                      <path d="M12 5v14" />
+                      <path d="M5 12h14" />
+                    </Icon>
+                  </span>
+                  Nowy zawodnik
+                </Link>
+                <Link className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 transition-colors border border-slate-200" href="/trainings/new">
+                  <span className="text-slate-700">
+                    <Icon className="h-4 w-4">
+                      <rect x="6.5" y="5.5" width="11" height="13" rx="1.5" />
+                      <path d="M9 9.5h6" />
+                      <path d="M9 12.5h6" />
+                    </Icon>
+                  </span>
+                  Nowy trening
+                </Link>
+              </>
+            ) : null}
             <Link className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 transition-colors border border-slate-200" href="/skills">
               <span className="text-slate-700">
                 <Icon className="h-4 w-4">

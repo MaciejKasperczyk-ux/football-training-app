@@ -4,6 +4,7 @@ import { dbConnect } from "@/lib/mongodb";
 import { Player } from "@/models/Player";
 import { PlayerSkill } from "@/models/PlayerSkill";
 import { requireRoleApi } from "@/lib/auth";
+import type { DiscAssignedTo } from "@/lib/disc";
 
 type InitialSkillPayload = {
   skillId: string;
@@ -46,6 +47,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "firstName and lastName are required" }, { status: 400 });
   }
 
+  const discAssignedTo: DiscAssignedTo = body.discAssignedTo === "admin" ? "admin" : "player";
+
   const created = await Player.create({
     firstName: String(body.firstName),
     lastName: String(body.lastName),
@@ -55,6 +58,8 @@ export async function POST(req: Request) {
     birthDate: body.birthDate ? new Date(String(body.birthDate)) : undefined,
     dominantFoot: body.dominantFoot ? String(body.dominantFoot) : undefined,
     trainers: Array.isArray(body.trainers) ? body.trainers.map((x: any) => String(x)) : undefined,
+    discAssignedTo,
+    discStatus: "pending",
   });
 
   const initialSkills: InitialSkillPayload[] = Array.isArray(body.initialSkills) ? body.initialSkills : [];

@@ -21,6 +21,7 @@ export default function NewPlayerPage() {
   const [age] = useState<string>("");
   const [birthDate, setBirthDate] = useState<string>("");
   const [dominantFoot, setDominantFoot] = useState<string>("");
+  const [discAssignedTo, setDiscAssignedTo] = useState<"player" | "admin">("player");
   const [showSkillsPicker, setShowSkillsPicker] = useState(false);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [skillsLoading, setSkillsLoading] = useState(false);
@@ -83,13 +84,21 @@ export default function NewPlayerPage() {
           skillId,
           detailIds: selectedDetailsBySkill[skillId] ?? [],
         })),
+        discAssignedTo,
       }),
     });
 
+    const data = await res.json().catch(() => null);
     if (!res.ok) {
-      const data = await res.json().catch(() => null);
       setError(data?.error ? JSON.stringify(data.error) : "Nie udało się dodać zawodnika");
       setLoading(false);
+      return;
+    }
+
+    const createdId = data?._id ? String(data._id) : "";
+    if (discAssignedTo === "admin" && createdId) {
+      router.push(`/players/${createdId}/disc`);
+      router.refresh();
       return;
     }
 
@@ -115,6 +124,14 @@ export default function NewPlayerPage() {
             <label className="field-label">Nazwisko</label>
             <input className="field-input" value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </div>
+        </div>
+
+        <div className="grid gap-1">
+          <label className="field-label">Ankieta DISC</label>
+          <select className="field-select" value={discAssignedTo} onChange={(e) => setDiscAssignedTo(e.target.value as "player" | "admin")}>
+            <option value="player">Wypelnia zawodnik przy 1 logowaniu</option>
+            <option value="admin">Wypelniam ja od razu po zapisie</option>
+          </select>
         </div>
 
         <div className="grid grid-cols-2 gap-3">

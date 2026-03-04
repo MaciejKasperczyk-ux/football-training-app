@@ -14,6 +14,7 @@ import PlayerSkillsManager from "@/components/players/PlayerSkillsManager";
 import PlayerGoals from "@/components/players/PlayerGoals";
 import PlayerSkillsRadar from "@/components/players/PlayerSkillsRadar";
 import PlayerAccountPanel from "@/components/players/PlayerAccountPanel";
+import DiscProfileChart from "@/components/players/DiscProfileChart";
 
 type PageProps = { params: Promise<{ id: string }> };
 type SkillItem = { _id: unknown; name: string; details?: unknown[] };
@@ -29,6 +30,9 @@ type PlayerProfile = {
   club?: string | null;
   position?: string | null;
   dominantFoot?: string | null;
+  discAssignedTo?: "player" | "admin";
+  discStatus?: "pending" | "completed";
+  discScores?: { D?: number; I?: number; S?: number; C?: number } | null;
 };
 type TrainingItem = {
   _id: unknown;
@@ -166,6 +170,15 @@ export default async function PlayerPage({ params }: PageProps) {
   const recentTraining = trainingsList[0];
   const playerInitials = initials(player.firstName, player.lastName);
   const dominantFoot = dominantFootLabel(playerProfile.dominantFoot);
+  const discScoresRaw = playerProfile.discScores ?? {};
+  const discScores = {
+    D: Number(discScoresRaw.D ?? 0),
+    I: Number(discScoresRaw.I ?? 0),
+    S: Number(discScoresRaw.S ?? 0),
+    C: Number(discScoresRaw.C ?? 0),
+  };
+  const discStatus = playerProfile.discStatus ?? "pending";
+  const discAssignedTo = playerProfile.discAssignedTo ?? "player";
 
   return (
     <div className="page-wrap">
@@ -225,13 +238,33 @@ export default async function PlayerPage({ params }: PageProps) {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          {canManage ? <EditPlayerPanel player={playerProfile} playerId={String(playerProfile._id)} /> : null}
-          <PlayerSkillsManager playerId={String(playerProfile._id)} canManage={canManage} />
-          <PlayerGoals playerId={String(playerProfile._id)} canManage={canManage} />
+          {canManage ? (
+            <details className="surface p-3" open>
+              <summary className="cursor-pointer text-sm font-semibold text-slate-800">Dane zawodnika</summary>
+              <div className="mt-3">
+                <EditPlayerPanel player={playerProfile} playerId={String(playerProfile._id)} />
+              </div>
+            </details>
+          ) : null}
 
-          <div className="surface p-5">
+          <details className="surface p-3" open>
+            <summary className="cursor-pointer text-sm font-semibold text-slate-800">Umiejetnosci</summary>
+            <div className="mt-3">
+              <PlayerSkillsManager playerId={String(playerProfile._id)} canManage={canManage} />
+            </div>
+          </details>
+
+          <details className="surface p-3">
+            <summary className="cursor-pointer text-sm font-semibold text-slate-800">Cele</summary>
+            <div className="mt-3">
+              <PlayerGoals playerId={String(playerProfile._id)} canManage={canManage} />
+            </div>
+          </details>
+
+          <details className="surface p-3">
+            <summary className="cursor-pointer text-sm font-semibold text-slate-800">Ostatnie treningi</summary>
+            <div className="mt-3 px-2 pb-2">
             <div className="mb-3">
-              <h2 className="section-title">Ostatnie treningi</h2>
               <p className="section-copy">Maksymalnie 8 ostatnich wpisow.</p>
             </div>
 
@@ -257,13 +290,35 @@ export default async function PlayerPage({ params }: PageProps) {
                 ))}
               </div>
             )}
-          </div>
+            </div>
+          </details>
         </div>
 
         <div className="space-y-4">
-          <PlayerSkillsRadar data={skillProgress} />
+          <details className="surface p-3" open>
+            <summary className="cursor-pointer text-sm font-semibold text-slate-800">Radar umiejetnosci</summary>
+            <div className="mt-3">
+              <PlayerSkillsRadar data={skillProgress} />
+            </div>
+          </details>
 
-          <div className="surface p-5">
+          <details className="surface p-3" open>
+            <summary className="cursor-pointer text-sm font-semibold text-slate-800">Model DISC</summary>
+            <div className="mt-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-700">Status: <strong>{discStatus === "completed" ? "wypelniona" : "oczekuje"}</strong></span>
+                <span className="text-xs text-slate-500">Wypelnia: {discAssignedTo === "player" ? "zawodnik" : "trener/admin"}</span>
+              </div>
+              <Link className="btn btn-secondary w-fit" href={`/players/${String(playerProfile._id)}/disc`}>
+                {discStatus === "completed" ? "Otworz ankiete DISC" : "Wypelnij ankiete DISC"}
+              </Link>
+              {discStatus === "completed" ? <DiscProfileChart scores={discScores} /> : null}
+            </div>
+          </details>
+
+          <details className="surface p-3">
+            <summary className="cursor-pointer text-sm font-semibold text-slate-800">Szybkie podsumowanie</summary>
+            <div className="mt-3 px-2 pb-2">
             <h2 className="section-title">Szybkie podsumowanie</h2>
             <div className="mt-3 grid gap-2 text-sm">
               <div className="surface-muted flex items-center justify-between px-3 py-2">
@@ -294,9 +349,12 @@ export default async function PlayerPage({ params }: PageProps) {
                 />
               </div>
             </div>
-          </div>
+            </div>
+          </details>
 
-          <div className="surface p-5">
+          <details className="surface p-3">
+            <summary className="cursor-pointer text-sm font-semibold text-slate-800">Top umiejetnosci</summary>
+            <div className="mt-3 px-2 pb-2">
             <h2 className="section-title">Top umiejetnosci</h2>
             <div className="mt-3 grid gap-2">
               {skillProgress.slice(0, 6).map((skill) => (
@@ -306,7 +364,8 @@ export default async function PlayerPage({ params }: PageProps) {
                 </div>
               ))}
             </div>
-          </div>
+            </div>
+          </details>
 
           {role === "admin" ? <PlayerAccountPanel playerId={String(playerProfile._id)} playerName={`${player.firstName} ${player.lastName}`} /> : null}
         </div>

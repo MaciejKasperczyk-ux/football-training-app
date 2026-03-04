@@ -24,6 +24,17 @@ const PlayerSchema = new Schema(
     isActive: { type: Boolean, default: true },
     trainers: [{ type: Schema.Types.ObjectId, ref: "User" }],
     userId: { type: Schema.Types.ObjectId, ref: "User", required: false, unique: true, sparse: true },
+    discAssignedTo: { type: String, enum: ["player", "admin"], default: "player" },
+    discStatus: { type: String, enum: ["pending", "completed"], default: "pending" },
+    discArea: { type: String, enum: ["sport", "family"], required: false },
+    discScores: {
+      D: { type: Number, default: 0 },
+      I: { type: Number, default: 0 },
+      S: { type: Number, default: 0 },
+      C: { type: Number, default: 0 },
+    },
+    discAnswers: { type: Schema.Types.Mixed, required: false },
+    discCompletedAt: { type: Date, required: false },
   },
   { timestamps: true }
 );

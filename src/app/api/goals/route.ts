@@ -65,9 +65,12 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const auth = await requireRoleApi(["admin", "trainer"]);
+  const auth = await requireRoleApi(["admin", "trainer", "club_trainer", "player"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
   const user = (auth.session?.user as SessionUser | undefined) ?? undefined;
+  const role = user?.role;
+  const ownPlayerId = user?.playerId;
+  const ownUserId = user?.id;
 
   await dbConnect();
 
@@ -77,8 +80,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
+  const targetPlayerId = parsed.data.playerId;
+
+  if (role === "player") {
+    if (!ownPlayerId || String(targetPlayerId) !== String(ownPlayerId)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
+  if (role === "club_trainer") {
+    if (!ownUserId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const assigned = await Player.exists({ _id: targetPlayerId, trainers: ownUserId });
+    if (!assigned) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const created = await Goal.create({
-    playerId: parsed.data.playerId,
+    playerId: targetPlayerId,
     title: parsed.data.title,
     description: parsed.data.description,
     dueDate: new Date(parsed.data.dueDate),

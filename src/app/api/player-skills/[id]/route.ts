@@ -2,9 +2,11 @@ import { NextResponse, type NextRequest } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import { requireRoleApi } from "@/lib/auth";
 import { PlayerSkill } from "@/models/PlayerSkill";
+import { Player } from "@/models/Player";
 import { z } from "zod";
 
 type Ctx = { params: Promise<{ id: string }> };
+type SessionUser = { role?: "admin" | "trainer" | "club_trainer" | "viewer" | "player"; playerId?: string | null; id?: string | null };
 
 const updateSchema = z.object({
   plannedDate: z.string().optional(),
@@ -16,8 +18,12 @@ const updateSchema = z.object({
 export async function PUT(req: NextRequest, { params }: Ctx) {
   const { id } = await params;
 
-  const auth = await requireRoleApi(["admin", "trainer"]);
+  const auth = await requireRoleApi(["admin", "trainer", "club_trainer", "player"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+  const user = (auth.session?.user as SessionUser | undefined) ?? undefined;
+  const role = user?.role;
+  const ownPlayerId = user?.playerId;
+  const ownUserId = user?.id;
 
   await dbConnect();
 
@@ -31,6 +37,18 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
   if (parsed.data.status !== undefined) update.status = parsed.data.status;
   if (parsed.data.notes !== undefined) update.notes = parsed.data.notes;
 
+  const existing = await PlayerSkill.findById(id).select("playerId");
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (role === "player" && String(existing.playerId) !== String(ownPlayerId ?? "")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (role === "club_trainer") {
+    const assigned = await Player.exists({ _id: existing.playerId, trainers: ownUserId });
+    if (!assigned) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const updated = await PlayerSkill.findByIdAndUpdate(id, update, { new: true });
   if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -40,10 +58,26 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
 export async function DELETE(_: NextRequest, { params }: Ctx) {
   const { id } = await params;
 
-  const auth = await requireRoleApi(["admin", "trainer"]);
+  const auth = await requireRoleApi(["admin", "trainer", "club_trainer", "player"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+  const user = (auth.session?.user as SessionUser | undefined) ?? undefined;
+  const role = user?.role;
+  const ownPlayerId = user?.playerId;
+  const ownUserId = user?.id;
 
   await dbConnect();
+
+  const existing = await PlayerSkill.findById(id).select("playerId");
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (role === "player" && String(existing.playerId) !== String(ownPlayerId ?? "")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (role === "club_trainer") {
+    const assigned = await Player.exists({ _id: existing.playerId, trainers: ownUserId });
+    if (!assigned) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const deleted = await PlayerSkill.findByIdAndDelete(id);
   if (!deleted) return NextResponse.json({ error: "Not found" }, { status: 404 });

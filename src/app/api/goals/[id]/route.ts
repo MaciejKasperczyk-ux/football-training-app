@@ -44,8 +44,12 @@ export async function GET(_: NextRequest, { params }: Ctx) {
 }
 
 export async function PUT(req: NextRequest, { params }: Ctx) {
-  const auth = await requireRoleApi(["admin", "trainer"]);
+  const auth = await requireRoleApi(["admin", "trainer", "club_trainer", "player"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+  const user = (auth.session?.user as SessionUser | undefined) ?? undefined;
+  const role = user?.role;
+  const ownPlayerId = user?.playerId;
+  const ownUserId = user?.id;
 
   const { id } = await params;
   if (!Types.ObjectId.isValid(id)) return NextResponse.json({ error: "Invalid goal id" }, { status: 400 });
@@ -60,6 +64,17 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
   if (parsed.data.description !== undefined) update.description = parsed.data.description;
   if (parsed.data.status !== undefined) update.status = parsed.data.status;
   if (parsed.data.dueDate !== undefined) update.dueDate = parsed.data.dueDate ? new Date(parsed.data.dueDate) : null;
+
+  const existingGoal = await Goal.findById(id);
+  if (!existingGoal) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (role === "player" && String(existingGoal.playerId) !== String(ownPlayerId ?? "")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  if (role === "club_trainer") {
+    const assigned = await Player.exists({ _id: existingGoal.playerId, trainers: ownUserId });
+    if (!assigned) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const goal = await Goal.findByIdAndUpdate(id, update, { new: true });
   if (!goal) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -94,13 +109,28 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
 }
 
 export async function DELETE(_: NextRequest, { params }: Ctx) {
-  const auth = await requireRoleApi(["admin", "trainer"]);
+  const auth = await requireRoleApi(["admin", "trainer", "club_trainer", "player"]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+  const user = (auth.session?.user as SessionUser | undefined) ?? undefined;
+  const role = user?.role;
+  const ownPlayerId = user?.playerId;
+  const ownUserId = user?.id;
 
   const { id } = await params;
   if (!Types.ObjectId.isValid(id)) return NextResponse.json({ error: "Invalid goal id" }, { status: 400 });
 
   await dbConnect();
+  const existingGoal = await Goal.findById(id);
+  if (!existingGoal) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (role === "player" && String(existingGoal.playerId) !== String(ownPlayerId ?? "")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  if (role === "club_trainer") {
+    const assigned = await Player.exists({ _id: existingGoal.playerId, trainers: ownUserId });
+    if (!assigned) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const deleted = await Goal.findByIdAndDelete(id);
   if (!deleted) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ ok: true });

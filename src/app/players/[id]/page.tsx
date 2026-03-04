@@ -83,7 +83,8 @@ export default async function PlayerPage({ params }: PageProps) {
 
   const sessionUser = session.user as SessionUser;
   const role = sessionUser.role;
-  const canManage = role === "admin" || role === "trainer";
+  const canManageProfile = role === "admin" || role === "trainer";
+  const canManageDevelopment = role === "admin" || role === "trainer" || role === "club_trainer" || role === "player";
   if (role === "player" && String(sessionUser.playerId ?? "") !== String(id)) {
     return (
       <div className="surface p-6">
@@ -216,7 +217,7 @@ export default async function PlayerPage({ params }: PageProps) {
             <Link className="btn btn-secondary" href="/players">
               Wroc do listy
             </Link>
-            {canManage ? <DeletePlayerButton playerId={String(playerProfile._id)} /> : null}
+            {canManageProfile ? <DeletePlayerButton playerId={String(playerProfile._id)} /> : null}
           </div>
         </div>
       </div>
@@ -238,7 +239,7 @@ export default async function PlayerPage({ params }: PageProps) {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          {canManage ? (
+          {canManageProfile ? (
             <details className="surface p-3" open>
               <summary className="cursor-pointer text-sm font-semibold text-slate-800">Dane zawodnika</summary>
               <div className="mt-3">
@@ -250,14 +251,14 @@ export default async function PlayerPage({ params }: PageProps) {
           <details className="surface p-3" open>
             <summary className="cursor-pointer text-sm font-semibold text-slate-800">Umiejetnosci</summary>
             <div className="mt-3">
-              <PlayerSkillsManager playerId={String(playerProfile._id)} canManage={canManage} />
+              <PlayerSkillsManager playerId={String(playerProfile._id)} canManage={canManageDevelopment} />
             </div>
           </details>
 
           <details className="surface p-3">
             <summary className="cursor-pointer text-sm font-semibold text-slate-800">Cele</summary>
             <div className="mt-3">
-              <PlayerGoals playerId={String(playerProfile._id)} canManage={canManage} />
+              <PlayerGoals playerId={String(playerProfile._id)} canManage={canManageDevelopment} />
             </div>
           </details>
 
@@ -281,7 +282,7 @@ export default async function PlayerPage({ params }: PageProps) {
                     <div className="mt-1 text-xs text-slate-600">
                       Cel: {training.goal?.trim() ? training.goal : "-"} | Elementy: {training.entries?.length ?? 0}
                     </div>
-                    {canManage ? (
+                    {canManageProfile ? (
                       <Link className="btn btn-secondary mt-3 w-fit" href={`/trainings/${String(training._id)}`}>
                         Szczegoly
                       </Link>

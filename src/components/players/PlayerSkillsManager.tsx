@@ -35,6 +35,7 @@ export default function PlayerSkillsManager({ playerId, canManage = true }: { pl
   const [assignStatus, setAssignStatus] = useState<PlayerSkill["status"]>("plan");
   const [plannedDate, setPlannedDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [showDone, setShowDone] = useState(false);
 
   const selectedSkill = useMemo(() => skills.find((s) => s._id === skillId), [skills, skillId]);
 
@@ -147,6 +148,7 @@ export default function PlayerSkillsManager({ playerId, canManage = true }: { pl
   const planCount = rows.filter((row) => row.status === "plan").length;
   const inProgressCount = rows.filter((row) => row.status === "w_trakcie").length;
   const doneCount = rows.filter((row) => row.status === "zrobione").length;
+  const visibleRows = showDone ? rows : rows.filter((row) => row.status !== "zrobione");
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -160,6 +162,17 @@ export default function PlayerSkillsManager({ playerId, canManage = true }: { pl
             <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-700">Plan: {planCount}</span>
             <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-700">W trakcie: {inProgressCount}</span>
             <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-700">Zrobione: {doneCount}</span>
+            <button
+              type="button"
+              className={`rounded-full border px-2.5 py-1 font-medium transition ${
+                showDone
+                  ? "border-cyan-300 bg-cyan-50 text-cyan-700"
+                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+              }`}
+              onClick={() => setShowDone((value) => !value)}
+            >
+              {showDone ? "Ukryj zrobione" : "Pokaz zrobione"}
+            </button>
           </div>
         </div>
       </div>
@@ -252,15 +265,15 @@ export default function PlayerSkillsManager({ playerId, canManage = true }: { pl
       </div>
 
       <div className="border-t border-gray-200 bg-white">
-        {rows.length === 0 ? (
+        {visibleRows.length === 0 ? (
           <div className="p-5">
             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-600">
-              Brak przypisanych umiejetnosci.
+              {rows.length === 0 ? "Brak przypisanych umiejetnosci." : "Brak umiejetnosci po zastosowaniu filtra."}
             </div>
           </div>
         ) : (
           <div className="grid gap-3 p-5">
-            {rows.map((r) => (
+            {visibleRows.map((r) => (
               <div key={r._id} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm transition hover:shadow-md md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-semibold text-slate-900">
